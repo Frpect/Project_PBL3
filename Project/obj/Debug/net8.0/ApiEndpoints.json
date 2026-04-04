@@ -1,0 +1,12 @@
+[
+  {
+    "ContainingType": "TestCautruc.Presentation_Layer.Controller.ProductController",
+    "Method": "Get",
+    "RelativePath": "api/Product",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  }
+]
