@@ -1,4 +1,4 @@
-﻿namespace Project.Application_Logic.DTOs
+﻿namespace Project.ApplicationLogic.DTOs
 {
     public class temptClass
     {
