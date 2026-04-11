@@ -1,46 +1,51 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Project.ApplicationLogic.Service;
 using Project.ApplicationLogic.DTOs;
+using Project.ExceptionHandling;
 
 namespace Project.Presentation_Layer.Controller
 {
-    //[ApiController]
-    //[Route("api/user")]
-    //public class UserController : ControllerBase
-    //{
-    //    private UserService service;
+    [ApiController]
+    [Route("user")]
+    public class UserController : ControllerBase
+    {
+        private readonly IUserService _service;
 
-    //    public UserController(UserService service)
-    //    {
-    //        this.service = service;
-    //    }
+        public UserController(IUserService service)
+        {
+            _service = service;
+        }
 
-    //    [HttpPost("register")]
-    //    public IActionResult Register([FromBody] RegisterRequest req)
-    //    {
-    //        try
-    //        {
-    //            service.Register(req);
-    //            return Ok(new { message = "Register success" });
-    //        }
-    //        catch (Exception ex)
-    //        {
-    //            return BadRequest(ex.Message);
-    //        }
-    //    }
+        [HttpPost("register")]
+        public IActionResult Register(RegisterRequest request)
+        {
+            try
+            {
+                var result = _service.Register(request);
+                return Ok(result);
+            }
+            catch (ConflictException ex)
+            {
+                return Conflict(new { message = ex.Message });
+            }
+        }
 
-    //    [HttpPost("login")]
-    //    public IActionResult Login([FromBody] LoginRequest req)
-    //    {
-    //        try
-    //        {
-    //            var user = service.Login(req);
-    //            return Ok(user);
-    //        }
-    //        catch (Exception ex)
-    //        {
-    //            return BadRequest(ex.Message);
-    //        }
-    //    }
-    //}
+        [HttpPost("login")]
+        public IActionResult Login(LoginRequest request)
+        {
+            try
+            {
+                var result = _service.Login(request);
+                return Ok(result);
+            }
+            catch (NotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+            catch (UnauthorizedException ex)
+            {
+                return Unauthorized(new { message = ex.Message });
+            }
+        }
+    }
 }

@@ -1,68 +1,79 @@
 ﻿namespace Project.ApplicationLogic.Service
 {
+    using System;
     using System.Security.Cryptography;
     using System.Text;
     using Project.ApplicationLogic.DTOs;
-   // using Project.DataLayer.Models;
+    using Project.ExceptionHandling;
+    using Project.DataLayer.Models;
     using Project.DataLayer.Respository;
     
-    public class UserService
+    public class UserService : IUserService
     {
-        /*
-        private IUserRepository repo;
+        private readonly IUserRepository _repo;
 
         public UserService(IUserRepository repo)
         {
-            this.repo = repo;
+            _repo = repo;
         }
 
-        // 🔐 Hash password
-        private string HashPassword(string password)
+        public UserResponse Register(RegisterRequest request)
         {
-            using (SHA256 sha = SHA256.Create())
-            {
-                var bytes = Encoding.UTF8.GetBytes(password);
-                var hash = sha.ComputeHash(bytes);
-                return Convert.ToBase64String(hash);
-            }
-        }
+            var userExist = _repo.GetByIdentifier(request.Username);
 
-        // 📝 Register
-        public void Register(RegisterRequest req)
-        {
-            var existing = repo.GetByUsername(req.username);
-            if (existing != null)
-                throw new Exception("Username already exists");
+            if (userExist != null)
+                throw new ConflictException("Username already exists");
 
             var user = new User
             {
-                username = req.username,
-                password_hash = HashPassword(req.password),
-                email = req.email
+                Username = request.Username,
+                PasswordHash = HashPassword(request.Password),
+                Email = request.Email,
+                Phone = request.Phone,
+                FullName = request.FullName,
+                CreatedAt = DateTime.Now,
+                RoleId = 1
             };
 
-            repo.Add(user);
-        }
-
-        // 🔑 Login
-        public UserResponse Login(LoginRequest req)
-        {
-            var user = repo.GetByUsername(req.username);
-            if (user == null)
-                throw new Exception("User not found");
-
-            var hashed = HashPassword(req.password);
-            if (user.password_hash != hashed)
-                throw new Exception("Wrong password");
+            _repo.Add(user);
+            _repo.Save();
 
             return new UserResponse
             {
-                user_id = user.user_id,
-                username = user.username,
-                email = user.email
+                UserId = user.UserId,
+                Username = user.Username,
+                Email = user.Email,
+                Phone = user.Phone ?? string.Empty,
+                FullName = user.FullName ?? string.Empty
             };
         }
-        */
+
+        public UserResponse Login(LoginRequest request)
+        {
+            var user = _repo.GetByIdentifier(request.Identifier);
+
+            if (user == null)
+                throw new NotFoundException("User not found");
+
+            if (user.PasswordHash != HashPassword(request.Password))
+                throw new UnauthorizedException("Wrong password");
+
+            return new UserResponse
+            {
+                UserId = user.UserId,
+                Username = user.Username,
+                Email = user.Email,
+                Phone = user.Phone ?? string.Empty,
+                FullName = user.FullName ?? string.Empty
+            };
+        }
+
+        private string HashPassword(string password)
+        {
+            using var sha256 = SHA256.Create();
+            var bytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
+            return Convert.ToBase64String(bytes);
+        }
     }
 }
     

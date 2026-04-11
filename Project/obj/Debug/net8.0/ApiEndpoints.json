@@ -2,13 +2,13 @@
   {
     "ContainingType": "Project.Presentation_Layer.Controller.UserController",
     "Method": "Login",
-    "RelativePath": "api/user/login",
+    "RelativePath": "user/login",
     "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,
     "Parameters": [
       {
-        "Name": "req",
+        "Name": "request",
         "Type": "Project.ApplicationLogic.DTOs.LoginRequest",
         "IsRequired": true
       }
@@ -18,13 +18,13 @@
   {
     "ContainingType": "Project.Presentation_Layer.Controller.UserController",
     "Method": "Register",
-    "RelativePath": "api/user/register",
+    "RelativePath": "user/register",
     "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,
     "Parameters": [
       {
-        "Name": "req",
+        "Name": "request",
         "Type": "Project.ApplicationLogic.DTOs.RegisterRequest",
         "IsRequired": true
       }
