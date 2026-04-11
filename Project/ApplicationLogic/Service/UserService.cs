@@ -3,11 +3,12 @@
     using System.Security.Cryptography;
     using System.Text;
     using Project.ApplicationLogic.DTOs;
-    using Project.DataLayer.Models;
+   // using Project.DataLayer.Models;
     using Project.DataLayer.Respository;
-
+    
     public class UserService
     {
+        /*
         private IUserRepository repo;
 
         public UserService(IUserRepository repo)
@@ -61,5 +62,7 @@
                 email = user.email
             };
         }
+        */
     }
 }
+    
