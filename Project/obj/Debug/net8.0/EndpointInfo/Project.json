@@ -5,7 +5,7 @@
     "version": "1.0"
   },
   "paths": {
-    "/api/user/register": {
+    "/user/register": {
       "post": {
         "tags": [
           "User"
@@ -36,7 +36,7 @@
         }
       }
     },
-    "/api/user/login": {
+    "/user/login": {
       "post": {
         "tags": [
           "User"
@@ -71,33 +71,58 @@
   "components": {
     "schemas": {
       "LoginRequest": {
+        "required": [
+          "identifier",
+          "password"
+        ],
         "type": "object",
         "properties": {
-          "username": {
-            "type": "string",
-            "nullable": true
+          "identifier": {
+            "minLength": 4,
+            "type": "string"
           },
           "password": {
-            "type": "string",
-            "nullable": true
+            "minLength": 6,
+            "type": "string"
           }
         },
         "additionalProperties": false
       },
       "RegisterRequest": {
+        "required": [
+          "confirmPassword",
+          "email",
+          "fullName",
+          "password",
+          "username"
+        ],
         "type": "object",
         "properties": {
           "username": {
-            "type": "string",
-            "nullable": true
+            "minLength": 4,
+            "type": "string"
           },
           "password": {
-            "type": "string",
-            "nullable": true
+            "minLength": 6,
+            "type": "string"
+          },
+          "confirmPassword": {
+            "minLength": 1,
+            "type": "string"
           },
           "email": {
+            "minLength": 1,
             "type": "string",
+            "format": "email"
+          },
+          "phone": {
+            "type": "string",
+            "format": "tel",
             "nullable": true
+          },
+          "fullName": {
+            "minLength": 1,
+            "type": "string"
           }
         },
         "additionalProperties": false
