@@ -47,5 +47,32 @@ namespace Project.Presentation_Layer.Controller
                 return Unauthorized(new { message = ex.Message });
             }
         }
+        [HttpGet("profile/{id}")]
+        public IActionResult GetProfile(int id)
+        {
+            try
+            {
+                var result = _service.GetProfile(id);
+                return Ok(result);
+            }
+            catch (NotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+        }
+
+        [HttpPut("profile/{id}")]
+        public IActionResult UpdateProfile(int id, [FromBody] UpdateProfileRequest request)
+        {
+            try
+            {
+                var result = _service.UpdateProfile(id, request);
+                return Ok(result);
+            }
+            catch (NotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+        }
     }
 }

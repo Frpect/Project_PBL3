@@ -19,6 +19,11 @@ namespace Project.DataLayer.Respository
                 .FirstOrDefault(u => u.Username == identifier || u.Email == identifier);
         }
 
+        public User? GetById(int userId)
+        {
+            return _context.Users.FirstOrDefault(u => u.UserId == userId);
+        }
+
         public void Add(User user)
         {
             _context.Users.Add(user);

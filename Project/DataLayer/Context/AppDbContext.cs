@@ -46,7 +46,7 @@ public partial class AppDbContext : DbContext
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-        => optionsBuilder.UseSqlServer("Server=HOANGVIPPRO\\SQLEXPRESS;Database=FASHIONSTORE;Trusted_Connection=True;TrustServerCertificate=True;");
+        => optionsBuilder.UseSqlServer("Server=HOANG\\SQLEXPRESS;Database=FASHIONSTORE;Trusted_Connection=True;TrustServerCertificate=True;");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -81,8 +81,6 @@ public partial class AppDbContext : DbContext
         modelBuilder.Entity<InventoryTransaction>(entity =>
         {
             entity.HasKey(e => e.TransactionId).HasName("PK__Inventor__85C600AFB5B7C07B");
-
-            entity.Property(e => e.TransactionId).ValueGeneratedNever();
 
             entity.HasOne(d => d.Variant).WithMany(p => p.InventoryTransactions).HasConstraintName("FK__Inventory__varia__10566F31");
         });

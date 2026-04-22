@@ -6,5 +6,7 @@ namespace Project.ApplicationLogic.Service
     {
         UserResponse Register(RegisterRequest request);
         UserResponse Login(LoginRequest request);
+        UserResponse GetProfile(int userId);
+        UserResponse UpdateProfile(int userId, UpdateProfileRequest request);
     }
 }

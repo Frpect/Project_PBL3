@@ -68,6 +68,46 @@
             };
         }
 
+        public UserResponse GetProfile(int userId)
+        {
+            var user = _repo.GetById(userId);
+
+            if (user == null)
+                throw new NotFoundException("User not found");
+
+            return new UserResponse
+            {
+                UserId = user.UserId,
+                Username = user.Username,
+                Email = user.Email,
+                Phone = user.Phone ?? string.Empty,
+                FullName = user.FullName ?? string.Empty
+            };
+        }
+
+        public UserResponse UpdateProfile(int userId, UpdateProfileRequest request)
+        {
+            var user = _repo.GetById(userId);
+
+            if (user == null)
+                throw new NotFoundException("User not found");
+
+            user.FullName = request.FullName;
+            user.Email = request.Email;
+            user.Phone = request.Phone;
+
+            _repo.Save();
+
+            return new UserResponse
+            {
+                UserId = user.UserId,
+                Username = user.Username,
+                Email = user.Email,
+                Phone = user.Phone ?? string.Empty,
+                FullName = user.FullName ?? string.Empty
+            };
+        }
+
         private string HashPassword(string password)
         {
             using var sha256 = SHA256.Create();
