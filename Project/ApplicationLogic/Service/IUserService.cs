@@ -8,5 +8,6 @@ namespace Project.ApplicationLogic.Service
         UserResponse Login(LoginRequest request);
         UserResponse GetProfile(int userId);
         UserResponse UpdateProfile(int userId, UpdateProfileRequest request);
+        List<CustomerResponse> GetCustomers(string? search);
     }
 }

@@ -24,6 +24,18 @@ namespace Project.DataLayer.Respository
             return _context.Users.FirstOrDefault(u => u.UserId == userId);
         }
 
+        public List<User> GetCustomers(string? search)
+        {
+            var query = _context.Users.AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(search))
+                query = query.Where(u =>
+                    (u.FullName != null && u.FullName.Contains(search)) ||
+                    u.Username.Contains(search));
+
+            return query.OrderBy(u => u.FullName).ToList();
+        }
+
         public void Add(User user)
         {
             _context.Users.Add(user);

@@ -108,6 +108,22 @@
             };
         }
 
+        public List<CustomerResponse> GetCustomers(string? search)
+        {
+            var users = _repo.GetCustomers(search);
+
+            return users.Select(u => new CustomerResponse
+            {
+                UserId = u.UserId,
+                Username = u.Username,
+                FullName = u.FullName ?? string.Empty,
+                Email = u.Email,
+                Phone = u.Phone ?? string.Empty,
+                Status = u.Status ?? string.Empty,
+                CreatedAt = u.CreatedAt
+            }).ToList();
+        }
+
         private string HashPassword(string password)
         {
             using var sha256 = SHA256.Create();
