@@ -9,10 +9,12 @@ namespace Project.PresentationLayer.Controllers
     public class ProductsController : ControllerBase
     {
         private readonly IProductService _service;
+        private readonly IInventoryService _inventoryService;
 
-        public ProductsController(IProductService service)
+        public ProductsController(IProductService service, IInventoryService inventoryService)
         {
             _service = service;
+            _inventoryService = inventoryService;
         }
 
         // 🔹 GET: api/products
@@ -80,6 +82,21 @@ namespace Project.PresentationLayer.Controllers
             catch (Exception ex)
             {
                 return NotFound(new { message = ex.Message });
+            }
+        }
+
+        // GET /api/products/minimal
+        [HttpGet("minimal")]
+        public async Task<IActionResult> GetMinimal()
+        {
+            try
+            {
+                var result = await _inventoryService.GetProductsMinimalAsync();
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
             }
         }
     }

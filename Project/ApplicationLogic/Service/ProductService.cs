@@ -51,12 +51,14 @@ namespace Project.ApplicationLogic.Service
             .ToList(),
 
                 Sizes = p.ProductVariants
-            .Select(v => v.Size)
+            .Select(v => v.Size?.SizeName)
+            .Where(s => s != null)
             .Distinct()
             .ToList(),
 
                 Colors = p.ProductVariants
-            .Select(v => v.Color)
+            .Select(v => v.Color?.ColorName)
+            .Where(c => c != null)
             .Distinct()
             .ToList(),
 
@@ -65,8 +67,8 @@ namespace Project.ApplicationLogic.Service
                 Variants = p.ProductVariants.Select(v => new ProductVariantDto
                 {
                     VariantId = v.VariantId,
-                    Size = v.Size,
-                    Color = v.Color,
+                    Size = v.Size?.SizeName ?? string.Empty,
+                    Color = v.Color?.ColorName ?? string.Empty,
                     Price = v.Price ?? 0
 
                 }).ToList()

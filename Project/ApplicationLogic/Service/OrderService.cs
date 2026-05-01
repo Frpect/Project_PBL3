@@ -60,7 +60,7 @@ namespace Project.ApplicationLogic.Service
                 DiscountAmount = discount,
                 OrderStatus = "pending",
                 OrderDate = DateTime.Now,
-                ShippingAddress = request.ShippingAddress
+                ShippingAddressId = request.ShippingAddressId
             };
 
             await _orderRepo.AddOrderAsync(order);
@@ -136,8 +136,8 @@ namespace Project.ApplicationLogic.Service
             {
                 VariantId = od.VariantId ?? 0,
                 ProductName = od.Variant?.Product?.ProductName ?? string.Empty,
-                Size = od.Variant?.Size ?? string.Empty,
-                Color = od.Variant?.Color ?? string.Empty,
+                Size = od.Variant?.Size?.SizeName ?? string.Empty,
+                Color = od.Variant?.Color?.ColorName ?? string.Empty,
                 Price = od.Price ?? 0,
                 Quantity = od.Quantity ?? 0
             }).ToList();
@@ -150,9 +150,16 @@ namespace Project.ApplicationLogic.Service
                 DiscountAmount = order.DiscountAmount ?? 0,
                 FinalAmount = (order.TotalAmount ?? 0) - (order.DiscountAmount ?? 0),
                 OrderDate = order.OrderDate ?? DateTime.Now,
-                ShippingAddress = order.ShippingAddress ?? string.Empty,
+                ShippingAddress = FormatAddress(order.ShippingAddress),
                 Items = items
             };
+        }
+        private static string FormatAddress(Address? addr)
+        {
+            if (addr == null) return string.Empty;
+            var parts = new[] { addr.StreetAddress, addr.Ward, addr.District, addr.Province }
+                .Where(p => !string.IsNullOrWhiteSpace(p));
+            return string.Join(", ", parts);
         }
     }
 }

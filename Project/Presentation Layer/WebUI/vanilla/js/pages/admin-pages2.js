@@ -598,7 +598,7 @@ function renderPromoRows() {
       <td><span class="badge ${p.status === 'active' ? 'badge-default' : 'badge-outline'}">${p.status === 'active' ? 'Hoạt động' : 'Tạm dừng'}</span></td>
       <td class="text-right">
         <div class="flex justify-end gap-2">
-          <button class="btn btn-outline btn-sm">${icon('pencil', 'w-4 h-4')}</button>
+          <button class="btn btn-outline btn-sm" data-edit-promo='${JSON.stringify(p)}'>${icon('pencil', 'w-4 h-4')}</button>
           <button class="btn btn-outline btn-sm" data-delete-promo="${p.id}">${icon('trash-2', 'w-4 h-4 text-error')}</button>
         </div>
       </td>

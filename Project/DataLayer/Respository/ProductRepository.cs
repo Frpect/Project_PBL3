@@ -18,6 +18,7 @@ namespace Project.DataLayer.Respository
         {
             return await _context.Products
                 .Include(p => p.Category)
+                .Where(p => p.DeletedAt == null)
                 .ToListAsync();
         }
 
@@ -26,9 +27,9 @@ namespace Project.DataLayer.Respository
         {
             return await _context.Products
                 .Include(p => p.Category)
-                .Include(p => p.ProductVariants)
+                .Include(p => p.ProductVariants.Where(v => v.DeletedAt == null))
                 .Include(p => p.ProductImages)
-                .FirstOrDefaultAsync(p => p.ProductId == id);
+                .FirstOrDefaultAsync(p => p.ProductId == id && p.DeletedAt == null);
         }
 
         // 🔹 Thêm product
@@ -43,17 +44,18 @@ namespace Project.DataLayer.Respository
             _context.Products.Update(product);
         }
 
-        // 🔹 Xóa product
+        // 🔹 Xóa mềm product
         public void Delete(Product product)
         {
-            _context.Products.Remove(product);
+            product.DeletedAt = DateTime.Now;
+            _context.Products.Update(product);
         }
 
         // 🔹 Kiểm tra category tồn tại
         public async Task<bool> CategoryExistsAsync(int categoryId)
         {
             return await _context.Categories
-                .AnyAsync(c => c.CategoryId == categoryId);
+                .AnyAsync(c => c.CategoryId == categoryId && c.DeletedAt == null);
         }
 
         // 🔹 Lưu thay đổi xuống DB

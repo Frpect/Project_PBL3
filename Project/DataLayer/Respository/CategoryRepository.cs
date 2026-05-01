@@ -16,7 +16,9 @@ namespace Project.DataLayer.Respository
         // 🔹 Lấy danh sách category
         public async Task<List<Category>> GetAllAsync()
         {
-            return await _context.Categories.ToListAsync();
+            return await _context.Categories
+                .Where(c => c.DeletedAt == null)
+                .ToListAsync();
         }
     }
 }

@@ -1,0 +1,132 @@
+using Project.ApplicationLogic.DTOs;
+using Project.DataLayer.Respository;
+using Project.ExceptionHandling;
+
+namespace Project.ApplicationLogic.Service
+{
+    public class CustomerService : ICustomerService
+    {
+        private readonly IUserRepository _userRepo;
+
+        public CustomerService(IUserRepository userRepo)
+        {
+            _userRepo = userRepo;
+        }
+
+        public CustomerResponse GetCustomerById(int id)
+        {
+            var user = _userRepo.GetById(id);
+            if (user == null)
+                throw new NotFoundException("Customer not found");
+
+            return MapToCustomerResponse(user);
+        }
+
+        public CustomerResponse ToggleStatus(int id)
+        {
+            var user = _userRepo.GetById(id);
+            if (user == null)
+                throw new NotFoundException("Customer not found");
+
+            user.Status = user.Status == "active" ? "locked" : "active";
+            _userRepo.Save();
+
+            return MapToCustomerResponse(user);
+        }
+
+        public List<CustomerResponse> SearchCustomers(string? query)
+        {
+            var users = _userRepo.GetCustomers(query);
+
+            return users.Select(u => MapToCustomerResponse(u)).ToList();
+        }
+
+        public List<OrderResponse> GetCustomerOrders(int id)
+        {
+            var user = _userRepo.GetByIdWithOrders(id);
+            if (user == null)
+                throw new NotFoundException("Customer not found");
+
+            return user.Orders
+                .OrderByDescending(o => o.OrderDate)
+                .Select(o => new OrderResponse
+                {
+                    OrderId = o.OrderId,
+                    OrderStatus = o.OrderStatus ?? string.Empty,
+                    TotalAmount = o.TotalAmount ?? 0,
+                    DiscountAmount = o.DiscountAmount ?? 0,
+                    FinalAmount = (o.TotalAmount ?? 0) - (o.DiscountAmount ?? 0),
+                    OrderDate = o.OrderDate ?? DateTime.MinValue,
+                    ShippingAddress = FormatAddress(o.ShippingAddress),
+                    Items = o.OrderDetails.Select(od => new OrderItemResponse
+                    {
+                        VariantId = od.VariantId ?? 0,
+                        ProductName = od.Variant?.Product?.ProductName ?? string.Empty,
+                        Size = od.Variant?.Size?.SizeName ?? string.Empty,
+                        Color = od.Variant?.Color?.ColorName ?? string.Empty,
+                        Price = od.Price ?? 0,
+                        Quantity = od.Quantity ?? 0
+                    }).ToList()
+                }).ToList();
+        }
+
+        public List<AddressResponse> GetCustomerAddresses(int id)
+        {
+            var user = _userRepo.GetByIdWithAddresses(id);
+            if (user == null)
+                throw new NotFoundException("Customer not found");
+
+            return user.Addresses.Select(a => new AddressResponse
+            {
+                AddressId = a.AddressId,
+                RecipientName = a.RecipientName ?? string.Empty,
+                Phone = a.Phone ?? string.Empty,
+                Province = a.Province ?? string.Empty,
+                District = a.District ?? string.Empty,
+                Ward = a.Ward ?? string.Empty,
+                StreetAddress = a.StreetAddress ?? string.Empty,
+                AddressType = a.AddressType ?? "home",
+                IsDefault = a.IsDefault ?? false
+            }).ToList();
+        }
+
+        public CustomerResponse UpdateCustomer(UpdateCustomerRequest request)
+        {
+            var user = _userRepo.GetById(request.UserId);
+            if (user == null)
+                throw new NotFoundException("Customer not found");
+
+            user.FullName = request.FullName;
+            user.Email = request.Email;
+            user.Phone = request.Phone;
+            if (request.Status != null)
+                user.Status = request.Status;
+
+            _userRepo.Save();
+
+            return MapToCustomerResponse(user);
+        }
+
+        private static CustomerResponse MapToCustomerResponse(DataLayer.Models.User user)
+        {
+            return new CustomerResponse
+            {
+                UserId = user.UserId,
+                Username = user.Username,
+                FullName = user.FullName ?? string.Empty,
+                Email = user.Email,
+                Phone = user.Phone ?? string.Empty,
+                Status = user.Status ?? "active",
+                CreatedAt = user.CreatedAt
+            };
+        }
+
+        private static string FormatAddress(DataLayer.Models.Address? addr)
+        {
+            if (addr == null) return string.Empty;
+            var parts = new[] { addr.StreetAddress, addr.Ward, addr.District, addr.Province }
+                .Where(p => !string.IsNullOrWhiteSpace(p));
+            return string.Join(", ", parts);
+        }
+    }
+}

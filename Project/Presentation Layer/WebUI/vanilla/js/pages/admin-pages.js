@@ -740,6 +740,52 @@ export function setupAdminCategoriesEvents() {
       navigateTo('/admin/categories');
     });
   });
+
+  document.querySelectorAll('[data-edit-cat]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const cat = JSON.parse(btn.dataset.editCat);
+      const content = `
+        <div class="dialog-header"><h3 class="dialog-title">Chỉnh sửa danh mục</h3></div>
+        <div class="space-y-4">
+          <div><label class="label">Tên danh mục *</label><input class="input" id="ec-name" value="${cat.name}" /></div>
+          <div><label class="label">Slug</label><input class="input" id="ec-slug" value="${cat.slug || ''}" /></div>
+          <div>
+            <label class="label">Danh mục cha</label>
+            <select class="custom-select" id="ec-parent">
+              <option value="">Không có</option>
+              ${categories.filter(c => !c.parentId && c.id !== cat.id).map(c => `<option value="${c.id}" ${c.id === cat.parentId ? 'selected' : ''}>${c.name}</option>`).join('')}
+            </select>
+          </div>
+          <div class="flex items-center gap-3">
+            <label class="switch">
+              <input type="checkbox" id="ec-visible" ${cat.isVisible ? 'checked' : ''} />
+              <span class="switch-slider"></span>
+            </label>
+            <span class="text-sm">Hiển thị trên website</span>
+          </div>
+        </div>
+        <div class="dialog-footer">
+          <button class="btn btn-outline" data-close>Hủy</button>
+          <button class="btn btn-default" id="ec-submit">Lưu thay đổi</button>
+        </div>
+      `;
+      const dialog = showDialog(content, { maxWidth: 'max-w-lg' });
+      dialog.element.querySelector('#ec-submit')?.addEventListener('click', () => {
+        const name = dialog.element.querySelector('#ec-name').value.trim();
+        if (!name) { toast.error('Vui lòng nhập tên danh mục'); return; }
+        const idx = categories.findIndex(c => c.id === cat.id);
+        if (idx >= 0) {
+          categories[idx].name = name;
+          categories[idx].slug = dialog.element.querySelector('#ec-slug').value.trim() || name.toLowerCase().replace(/\s+/g, '-');
+          categories[idx].parentId = dialog.element.querySelector('#ec-parent').value || undefined;
+          categories[idx].isVisible = dialog.element.querySelector('#ec-visible').checked;
+        }
+        dialog.close();
+        toast.success('Đã cập nhật danh mục');
+        navigateTo('/admin/categories');
+      });
+    });
+  });
 }
 
 // ===== Customers Page =====
@@ -787,7 +833,10 @@ function renderCustomerRows(custs) {
       <td class="font-semibold">${formatPrice(c.totalSpent)}</td>
       <td>${formatDate(c.createdAt)}</td>
       <td class="text-right">
-        <button class="btn btn-outline btn-sm" data-view-customer='${JSON.stringify(c)}'>${icon('eye', 'w-4 h-4')}</button>
+        <div class="flex justify-end gap-2">
+          <button class="btn btn-outline btn-sm" title="Xem lịch sử mua hàng" data-orders-customer='${JSON.stringify(c)}'>${icon('shopping-bag', 'w-4 h-4')}</button>
+          <button class="btn btn-outline btn-sm" title="Chỉnh sửa" data-edit-customer='${JSON.stringify(c)}'>${icon('pencil', 'w-4 h-4')}</button>
+        </div>
       </td>
     </tr>
   `).join('');
@@ -807,32 +856,120 @@ export function setupCustomersPageEvents() {
 }
 
 function setupCustomerViewButtons() {
-  document.querySelectorAll('[data-view-customer]').forEach(btn => {
+  // Edit customer
+  document.querySelectorAll('[data-edit-customer]').forEach(btn => {
     btn.addEventListener('click', () => {
-      const customer = JSON.parse(btn.dataset.viewCustomer);
+      const customer = JSON.parse(btn.dataset.editCustomer);
       const content = `
         <div class="dialog-header">
-          <h3 class="dialog-title">${customer.name}</h3>
-          <p class="dialog-description">${customer.email} · ${customer.phone}</p>
+          <h3 class="dialog-title">Chỉnh sửa khách hàng</h3>
+          <p class="dialog-description">Cập nhật thông tin cho ${customer.name}</p>
+        </div>
+        <div class="space-y-4">
+          <div>
+            <label class="label">Họ tên</label>
+            <input class="input" id="ec-name" value="${customer.name}" />
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="label">Email</label>
+              <input class="input" id="ec-email" type="email" value="${customer.email}" />
+            </div>
+            <div>
+              <label class="label">Số điện thoại</label>
+              <input class="input" id="ec-phone" value="${customer.phone}" />
+            </div>
+          </div>
+          <div>
+            <label class="label">Trạng thái</label>
+            <select class="custom-select" id="ec-status">
+              <option value="active" ${customer.status !== 'locked' ? 'selected' : ''}>Hoạt động</option>
+              <option value="locked" ${customer.status === 'locked' ? 'selected' : ''}>Đã khóa</option>
+            </select>
+          </div>
+        </div>
+        <div class="dialog-footer">
+          <button class="btn btn-outline" data-close>Hủy</button>
+          <button class="btn btn-default" id="ec-submit">Lưu thay đổi</button>
+        </div>
+      `;
+      const dialog = showDialog(content, { maxWidth: 'max-w-lg' });
+      dialog.element.querySelector('#ec-submit')?.addEventListener('click', () => {
+        const name = dialog.element.querySelector('#ec-name').value.trim();
+        const email = dialog.element.querySelector('#ec-email').value.trim();
+        const phone = dialog.element.querySelector('#ec-phone').value.trim();
+        if (!name || !email) { toast.error('Vui lòng điền đầy đủ thông tin'); return; }
+        const idx = customers.findIndex(c => c.id === customer.id);
+        if (idx >= 0) {
+          customers[idx].name = name;
+          customers[idx].email = email;
+          customers[idx].phone = phone;
+          customers[idx].status = dialog.element.querySelector('#ec-status').value;
+        }
+        dialog.close();
+        toast.success('Đã cập nhật thông tin khách hàng');
+        document.getElementById('admin-customers-tbody').innerHTML = renderCustomerRows(customers);
+        initIcons();
+        setupCustomerViewButtons();
+      });
+    });
+  });
+
+  // Orders history
+  document.querySelectorAll('[data-orders-customer]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const customer = JSON.parse(btn.dataset.ordersCustomer);
+      const customerOrders = mockOrders.filter(o => o.customerId === customer.id || o.customerName === customer.name);
+      const content = `
+        <div class="dialog-header">
+          <h3 class="dialog-title">Lịch sử mua hàng</h3>
+          <p class="dialog-description">${customer.name} · ${customerOrders.length} đơn hàng</p>
         </div>
         <div class="space-y-4">
           <div class="grid grid-cols-2 gap-4">
             <div class="bg-surface p-4 rounded-lg text-center">
-              <p class="text-2xl font-bold">${customer.totalOrders}</p>
-              <p class="text-sm text-text-secondary">Đơn hàng</p>
+              <p class="text-2xl font-bold text-primary">${customerOrders.length}</p>
+              <p class="text-sm text-text-secondary">Tổng đơn hàng</p>
             </div>
             <div class="bg-surface p-4 rounded-lg text-center">
-              <p class="text-2xl font-bold">${formatPrice(customer.totalSpent)}</p>
+              <p class="text-2xl font-bold text-success">${formatPrice(customer.totalSpent)}</p>
               <p class="text-sm text-text-secondary">Tổng chi tiêu</p>
             </div>
           </div>
-          <div>
-            <h4 class="font-semibold mb-2">Địa chỉ</h4>
-            ${(customer.addresses || []).map(a => `<p class="text-sm text-text-secondary mb-1">${a.address}</p>`).join('')}
-          </div>
+          ${customerOrders.length === 0 ? `
+            <div class="text-center py-8 text-text-secondary">
+              ${icon('shopping-bag', 'w-12 h-12 mx-auto mb-3 opacity-30')}
+              <p>Chưa có đơn hàng nào</p>
+            </div>
+          ` : `
+            <div class="table-wrapper max-h-80 overflow-y-auto">
+              <table class="data-table">
+                <thead><tr><th>Mã đơn</th><th>Ngày</th><th>Tổng tiền</th><th>Trạng thái</th></tr></thead>
+                <tbody>
+                  ${customerOrders.map(o => `
+                    <tr>
+                      <td class="font-mono text-sm">${o.orderNumber}</td>
+                      <td class="text-sm">${formatDate(o.createdAt)}</td>
+                      <td class="font-semibold">${formatPrice(o.total)}</td>
+                      <td><span class="badge ${o.status === 'delivered' ? 'badge-default' : o.status === 'cancelled' ? 'badge-destructive' : 'badge-outline'} text-xs">${
+                        o.status === 'delivered' ? 'Đã giao' :
+                        o.status === 'cancelled' ? 'Đã hủy' :
+                        o.status === 'shipping' ? 'Đang giao' :
+                        o.status === 'processing' ? 'Đang xử lý' : o.status
+                      }</span></td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          `}
+        </div>
+        <div class="dialog-footer">
+          <button class="btn btn-outline" data-close>Đóng</button>
         </div>
       `;
-      showDialog(content, { maxWidth: 'max-w-lg' });
+      showDialog(content, { maxWidth: 'max-w-2xl' });
+      initIcons();
     });
   });
 }

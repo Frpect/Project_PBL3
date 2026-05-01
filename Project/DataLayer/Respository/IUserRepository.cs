@@ -7,6 +7,8 @@ namespace Project.DataLayer.Respository
     {
         User GetByIdentifier(string identifier);
         User? GetById(int userId);
+        User? GetByIdWithAddresses(int userId);
+        User? GetByIdWithOrders(int userId);
         List<User> GetCustomers(string? search);
         void Add(User user);
         void Save();
