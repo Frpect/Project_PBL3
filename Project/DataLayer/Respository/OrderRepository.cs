@@ -41,6 +41,18 @@ namespace Project.DataLayer.Respository
                 .ToListAsync();
         }
 
+        public async Task<List<Order>> GetRecentOrdersAsync(int take, CancellationToken cancellationToken = default)
+        {
+            return await _context.Orders
+                .AsNoTracking()
+                .Include(o => o.OrderDetails)
+                    .ThenInclude(od => od.Variant)
+                        .ThenInclude(v => v!.Product)
+                .OrderByDescending(o => o.OrderDate)
+                .Take(take)
+                .ToListAsync(cancellationToken);
+        }
+
         // 🔹 Lấy inventory theo variant để check + trừ kho
         public async Task<Inventory?> GetInventoryByVariantIdAsync(int variantId)
         {

@@ -1,6 +1,7 @@
 ﻿using Project.ApplicationLogic.DTOs;
 using Project.DataLayer.Models;
 using Project.DataLayer.Respository;
+using System.Threading;
 
 namespace Project.ApplicationLogic.Service
 {
@@ -9,7 +10,7 @@ namespace Project.ApplicationLogic.Service
         private readonly IProductRepository _repo;
 
         public ProductService(IProductRepository repo)
-        {
+        {       
             _repo = repo;
         }
 
@@ -69,8 +70,8 @@ namespace Project.ApplicationLogic.Service
                     VariantId = v.VariantId,
                     Size = v.Size?.SizeName ?? string.Empty,
                     Color = v.Color?.ColorName ?? string.Empty,
-                    Price = v.Price ?? 0
-
+                    Price = v.Price ?? 0,
+                    Stock= v.Inventories?.Sum(i => i.Quantity) ?? 0
                 }).ToList()
             };
         }
@@ -127,6 +128,21 @@ namespace Project.ApplicationLogic.Service
 
             _repo.Delete(product);
             await _repo.SaveChangesAsync();
+        }
+
+        // 🔹 Lấy danh sách product nổi bật (featured)
+        public async Task<List<ProductResponse>> GetFeaturedAsync(string? filter, int take = 12, CancellationToken cancellationToken = default)
+        {
+            var products = await _repo.GetFeaturedAsync(filter ?? string.Empty, take, cancellationToken);
+
+            return products.Select(p => new ProductResponse
+            {
+                ProductId = p.ProductId,
+                ProductName = p.ProductName,
+                CategoryName = p.Category?.CategoryName,
+                Thumbnail = p.ProductImages.FirstOrDefault()?.ImageUrl,
+                Price = p.ProductVariants.FirstOrDefault()?.Price ?? 0
+            }).ToList();
         }
     }
 }

@@ -1,4 +1,5 @@
 using Project.ApplicationLogic.DTOs;
+using Project.DataLayer.Models;
 using Project.DataLayer.Respository;
 using Project.ExceptionHandling;
 
@@ -106,6 +107,85 @@ namespace Project.ApplicationLogic.Service
 
             return MapToCustomerResponse(user);
         }
+
+        public AddressResponse AddAddress(int userId, AddressUpsertRequest request)
+        {
+            var user = _userRepo.GetByIdWithAddresses(userId);
+            if (user == null)
+                throw new NotFoundException("Customer not found");
+
+            if (request.IsDefault)
+                foreach (var a in user.Addresses)
+                    a.IsDefault = false;
+
+            var addr = new Address
+            {
+                UserId = userId,
+                RecipientName = request.RecipientName,
+                Phone = request.Phone,
+                Province = request.Province,
+                District = request.District,
+                Ward = request.Ward,
+                StreetAddress = request.StreetAddress,
+                AddressType = string.IsNullOrWhiteSpace(request.AddressType) ? "home" : request.AddressType,
+                IsDefault = request.IsDefault
+            };
+
+            _userRepo.AddAddress(addr);
+            _userRepo.Save();
+
+            return MapAddress(addr);
+        }
+
+        public AddressResponse UpdateAddress(int userId, int addressId, AddressUpsertRequest request)
+        {
+            var user = _userRepo.GetByIdWithAddresses(userId);
+            if (user == null)
+                throw new NotFoundException("Customer not found");
+
+            var addr = _userRepo.GetAddressForUser(addressId, userId);
+            if (addr == null)
+                throw new NotFoundException("Address not found");
+
+            if (request.IsDefault)
+                foreach (var a in user.Addresses)
+                    a.IsDefault = false;
+
+            addr.RecipientName = request.RecipientName;
+            addr.Phone = request.Phone;
+            addr.Province = request.Province;
+            addr.District = request.District;
+            addr.Ward = request.Ward;
+            addr.StreetAddress = request.StreetAddress;
+            addr.AddressType = string.IsNullOrWhiteSpace(request.AddressType) ? "home" : request.AddressType;
+            addr.IsDefault = request.IsDefault;
+
+            _userRepo.Save();
+            return MapAddress(addr);
+        }
+
+        public void DeleteAddress(int userId, int addressId)
+        {
+            var addr = _userRepo.GetAddressForUser(addressId, userId);
+            if (addr == null)
+                throw new NotFoundException("Address not found");
+
+            _userRepo.RemoveAddress(addr);
+            _userRepo.Save();
+        }
+
+        private static AddressResponse MapAddress(Address a) => new()
+        {
+            AddressId = a.AddressId,
+            RecipientName = a.RecipientName ?? string.Empty,
+            Phone = a.Phone ?? string.Empty,
+            Province = a.Province ?? string.Empty,
+            District = a.District ?? string.Empty,
+            Ward = a.Ward ?? string.Empty,
+            StreetAddress = a.StreetAddress ?? string.Empty,
+            AddressType = a.AddressType ?? "home",
+            IsDefault = a.IsDefault ?? false
+        };
 
         private static CustomerResponse MapToCustomerResponse(DataLayer.Models.User user)
         {

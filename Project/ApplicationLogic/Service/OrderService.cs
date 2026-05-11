@@ -114,6 +114,22 @@ namespace Project.ApplicationLogic.Service
             return orders.Select(MapToResponse).ToList();
         }
 
+        public async Task<List<OrderListItemDto>> GetRecentSummariesAsync(int limit, CancellationToken cancellationToken = default)
+        {
+            var take = limit <= 0 ? 5 : limit;
+            var orders = await _orderRepo.GetRecentOrdersAsync(take, cancellationToken);
+            return orders.Select(o => new OrderListItemDto
+            {
+                OrderId = o.OrderId,
+                UserId = o.UserId,
+                OrderStatus = o.OrderStatus ?? string.Empty,
+                TotalAmount = o.TotalAmount ?? 0,
+                DiscountAmount = o.DiscountAmount ?? 0,
+                FinalAmount = (o.TotalAmount ?? 0) - (o.DiscountAmount ?? 0),
+                OrderDate = o.OrderDate ?? DateTime.MinValue
+            }).ToList();
+        }
+
         // 🔹 Hủy đơn hàng (chỉ cho phép khi đang ở trạng thái pending)
         public async Task CancelOrderAsync(int orderId)
         {

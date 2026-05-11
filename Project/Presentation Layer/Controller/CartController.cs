@@ -35,6 +35,25 @@ namespace Project.PresentationLayer.Controllers
             }
         }
 
+        // POST: api/Cart/sync — đồng bộ giỏ LocalStorage sau đăng nhập
+        [HttpPost("sync")]
+        public async Task<IActionResult> Sync([FromBody] CartSyncRequest request)
+        {
+            try
+            {
+                var result = await _service.SyncCartAsync(request);
+                return Ok(result);
+            }
+            catch (NotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
         // 🔹 GET: api/cart?userId=1
         [HttpGet]
         public async Task<IActionResult> GetCart([FromQuery] int userId)

@@ -35,14 +35,29 @@ namespace Project.PresentationLayer.Controllers
             }
         }
 
-        // 🔹 GET: api/order?userId=1
+        // GET: api/Order?userId=1 — đơn theo khách
+        // GET: api/Order?sort=newest&limit=5 — đơn mới nhất (dashboard / admin)
         [HttpGet]
-        public async Task<IActionResult> GetOrdersByUser([FromQuery] int userId)
+        public async Task<IActionResult> GetOrders(
+            [FromQuery] int? userId,
+            [FromQuery] string? sort,
+            [FromQuery] int? limit,
+            CancellationToken cancellationToken)
         {
             try
             {
-                var result = await _service.GetOrdersByUserAsync(userId);
-                return Ok(result);
+                if (userId.HasValue)
+                {
+                    var result = await _service.GetOrdersByUserAsync(userId.Value);
+                    return Ok(result);
+                }
+
+                if (!string.IsNullOrEmpty(sort) && !string.Equals(sort, "newest", StringComparison.OrdinalIgnoreCase))
+                    return BadRequest(new { message = "Only sort=newest is supported when userId is omitted." });
+
+                var take = limit.GetValueOrDefault(5);
+                var summaries = await _service.GetRecentSummariesAsync(take, cancellationToken);
+                return Ok(summaries);
             }
             catch (Exception ex)
             {

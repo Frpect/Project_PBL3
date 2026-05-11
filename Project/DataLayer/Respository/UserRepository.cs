@@ -66,5 +66,20 @@ namespace Project.DataLayer.Respository
         {
             _context.SaveChanges();
         }
+
+        public Address? GetAddressForUser(int addressId, int userId)
+        {
+            return _context.Addresses.FirstOrDefault(a => a.AddressId == addressId && a.UserId == userId);
+        }
+
+        public void AddAddress(Address address)
+        {
+            _context.Addresses.Add(address);
+        }
+
+        public void RemoveAddress(Address address)
+        {
+            _context.Addresses.Remove(address);
+        }
     }
 }

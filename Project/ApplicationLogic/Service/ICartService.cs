@@ -8,5 +8,6 @@ namespace Project.ApplicationLogic.Service
         Task RemoveItemAsync(int cartItemId);
         Task UpdateItemAsync(int cartItemId, UpdateCartItemRequest request);
         Task<CartResponse> GetCartAsync(int userId);
+        Task<CartResponse> SyncCartAsync(CartSyncRequest request);
     }
 }

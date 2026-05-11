@@ -9,6 +9,9 @@ namespace Project.ApplicationLogic.Service
         List<CustomerResponse> SearchCustomers(string? query);
         List<OrderResponse> GetCustomerOrders(int id);
         List<AddressResponse> GetCustomerAddresses(int id);
+        AddressResponse AddAddress(int userId, AddressUpsertRequest request);
+        AddressResponse UpdateAddress(int userId, int addressId, AddressUpsertRequest request);
+        void DeleteAddress(int userId, int addressId);
         CustomerResponse UpdateCustomer(UpdateCustomerRequest request);
     }
 }

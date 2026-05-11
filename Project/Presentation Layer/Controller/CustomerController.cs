@@ -84,6 +84,51 @@ namespace Project.PresentationLayer.Controllers
             }
         }
 
+        // POST /api/Customer/{id}/address
+        [HttpPost("{id}/address")]
+        public IActionResult AddAddress(int id, [FromBody] AddressUpsertRequest request)
+        {
+            try
+            {
+                var result = _service.AddAddress(id, request);
+                return Ok(result);
+            }
+            catch (NotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+        }
+
+        // PUT /api/Customer/{id}/address/{addressId}
+        [HttpPut("{id}/address/{addressId}")]
+        public IActionResult UpdateAddress(int id, int addressId, [FromBody] AddressUpsertRequest request)
+        {
+            try
+            {
+                var result = _service.UpdateAddress(id, addressId, request);
+                return Ok(result);
+            }
+            catch (NotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+        }
+
+        // DELETE /api/Customer/{id}/address/{addressId}
+        [HttpDelete("{id}/address/{addressId}")]
+        public IActionResult DeleteAddress(int id, int addressId)
+        {
+            try
+            {
+                _service.DeleteAddress(id, addressId);
+                return Ok(new { message = "Address removed" });
+            }
+            catch (NotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+        }
+
         // PUT /api/Customer
         [HttpPut]
         public IActionResult UpdateCustomer([FromBody] UpdateCustomerRequest request)

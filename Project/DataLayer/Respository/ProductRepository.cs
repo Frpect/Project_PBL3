@@ -22,6 +22,50 @@ namespace Project.DataLayer.Respository
                 .ToListAsync();
         }
 
+        /// <param name="filter">bestseller | new</param>
+        public async Task<List<Product>> GetFeaturedAsync(string filter, int take, CancellationToken cancellationToken = default)
+        {
+            filter = (filter ?? "new").Trim().ToLowerInvariant();
+            var baseQuery = _context.Products
+                .AsNoTracking()
+                .Include(p => p.Category)
+                .Include(p => p.ProductImages)
+                .Include(p => p.ProductVariants.Where(v => v.DeletedAt == null))
+                .Where(p => p.DeletedAt == null);
+
+            if (filter is "bestseller" or "bestsellers" or "hot")
+            {
+                var topIds = await _context.OrderDetails
+                    .Where(od => od.Variant != null && od.Order != null && od.Order.OrderStatus != "cancelled")
+                    .GroupBy(od => od.Variant!.ProductId)
+                    .OrderByDescending(g => g.Sum(x => x.Quantity ?? 0))
+                    .Select(g => g.Key)
+                    .Take(take)
+                    .ToListAsync(cancellationToken);
+
+                if (topIds.Count == 0)
+                {
+                    return await baseQuery
+                        .OrderByDescending(p => p.CreatedAt)
+                        .Take(take)
+                        .ToListAsync(cancellationToken);
+                }
+
+                var bestsellers = await baseQuery
+                    .Where(p => topIds.Contains(p.ProductId))
+                    .ToListAsync(cancellationToken);
+                var rank = topIds.Select((id, idx) => (id, idx)).ToDictionary(x => x.id, x => x.idx);
+                return bestsellers
+                    .OrderBy(p => rank.GetValueOrDefault(p.ProductId, int.MaxValue))
+                    .ToList();
+            }
+
+            return await baseQuery
+                .OrderByDescending(p => p.CreatedAt)
+                .Take(take)
+                .ToListAsync(cancellationToken);
+        }
+
         // 🔹 Lấy chi tiết product (kèm category + variant + image)
         public async Task<Product?> GetByIdAsync(int id)
         {

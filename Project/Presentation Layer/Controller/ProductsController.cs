@@ -25,6 +25,14 @@ namespace Project.PresentationLayer.Controllers
             return Ok(result);
         }
 
+        // GET: api/Products/featured?filter=bestseller|new&take=8
+        [HttpGet("featured")]
+        public async Task<IActionResult> Featured([FromQuery] string? filter, [FromQuery] int take = 12, CancellationToken cancellationToken = default)
+        {
+            var result = await _service.GetFeaturedAsync(filter, take, cancellationToken);
+            return Ok(result);
+        }
+
         // 🔹 GET: api/products/{id}
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)

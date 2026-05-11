@@ -101,5 +101,20 @@ namespace Project.ApplicationLogic.Service
                 Total = items.Sum(i => i.Price * i.Quantity)
             };
         }
+
+        public async Task<CartResponse> SyncCartAsync(CartSyncRequest request)
+        {
+            foreach (var line in request.Items.Where(i => i.Quantity > 0))
+            {
+                await AddItemAsync(new AddToCartRequest
+                {
+                    UserId = request.UserId,
+                    VariantId = line.VariantId,
+                    Quantity = line.Quantity
+                });
+            }
+
+            return await GetCartAsync(request.UserId);
+        }
     }
 }
