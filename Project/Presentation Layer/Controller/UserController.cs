@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Project.ApplicationLogic.Service;
 using Project.ApplicationLogic.DTOs;
 using Project.ExceptionHandling;
@@ -7,6 +8,7 @@ namespace Project.Presentation_Layer.Controller
 {
     [ApiController]
     [Route("user")]
+    [AllowAnonymous]
     public class UserController : ControllerBase
     {
         private readonly IUserService _service;
@@ -17,6 +19,7 @@ namespace Project.Presentation_Layer.Controller
         }
 
         [HttpPost("register")]
+        [AllowAnonymous]
         public IActionResult Register(RegisterRequest request)
         {
             try
@@ -31,12 +34,22 @@ namespace Project.Presentation_Layer.Controller
         }
 
         [HttpPost("login")]
+        [AllowAnonymous]
         public IActionResult Login(LoginRequest request)
         {
             try
             {
                 var result = _service.Login(request);
-                return Ok(result);
+                return Ok(new
+                {
+                    userId = result.UserId,
+                    username = result.Username,
+                    email = result.Email,
+                    fullName = result.FullName,
+                    role = result.Role,
+                    token = result.Token,
+                    expiresAt = result.ExpiresAt
+                });
             }
             catch (NotFoundException ex)
             {

@@ -6,7 +6,9 @@ namespace Project.DataLayer.Respository
     {
         Task AddOrderAsync(Order order);
         Task<Order?> GetByIdAsync(int id);
+        Task<List<Order>> GetAllOrdersAsync();
         Task<List<Order>> GetOrdersByUserIdAsync(int userId);
+        Task UpdateStatusAsync(int orderId, string status);
         Task<Inventory?> GetInventoryByVariantIdAsync(int variantId);
         Task<Promotion?> GetPromotionAsync(int promotionId);
         Task AddTransactionAsync(InventoryTransaction transaction);

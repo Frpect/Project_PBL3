@@ -36,6 +36,13 @@ namespace Project.DataLayer.Respository
             return query.OrderBy(u => u.FullName).ToList();
         }
 
+        public string? GetRoleNameById(int roleId)
+        {
+            return _context.Roles
+                .FirstOrDefault(r => r.RoleId == roleId)
+                ?.RoleName;
+        }
+
         public void Add(User user)
         {
             _context.Users.Add(user);

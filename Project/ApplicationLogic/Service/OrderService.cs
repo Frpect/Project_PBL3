@@ -114,6 +114,27 @@ namespace Project.ApplicationLogic.Service
             return orders.Select(MapToResponse).ToList();
         }
 
+        // 🔹 Lấy tất cả đơn hàng (admin)
+        public async Task<List<OrderResponse>> GetAllOrdersAsync()
+        {
+            var orders = await _orderRepo.GetAllOrdersAsync();
+            return orders.Select(MapToResponse).ToList();
+        }
+
+        // 🔹 Cập nhật trạng thái đơn hàng (admin)
+        public async Task UpdateOrderStatusAsync(int orderId, string status)
+        {
+            var order = await _orderRepo.GetByIdAsync(orderId)
+                ?? throw new NotFoundException("Order not found");
+
+            var validStatuses = new[] { "pending", "confirmed", "shipping", "completed", "cancelled" };
+            if (!validStatuses.Contains(status))
+                throw new Exception($"Invalid status: {status}");
+
+            await _orderRepo.UpdateStatusAsync(orderId, status);
+            await _orderRepo.SaveChangesAsync();
+        }
+
         // 🔹 Hủy đơn hàng (chỉ cho phép khi đang ở trạng thái pending)
         public async Task CancelOrderAsync(int orderId)
         {

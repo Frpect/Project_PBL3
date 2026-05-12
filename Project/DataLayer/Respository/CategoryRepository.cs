@@ -18,5 +18,38 @@ namespace Project.DataLayer.Respository
         {
             return await _context.Categories.ToListAsync();
         }
+
+        // 🔹 Lấy category theo id
+        public async Task<Category?> GetByIdAsync(int id)
+        {
+            return await _context.Categories.FindAsync(id);
+        }
+
+        // 🔹 Thêm category
+        public async Task AddAsync(Category category)
+        {
+            await _context.Categories.AddAsync(category);
+        }
+
+        // 🔹 Cập nhật category
+        public Task UpdateAsync(Category category)
+        {
+            _context.Categories.Update(category);
+            return Task.CompletedTask;
+        }
+
+        // 🔹 Xóa category theo id
+        public async Task DeleteAsync(int id)
+        {
+            var category = await _context.Categories.FindAsync(id);
+            if (category != null)
+                _context.Categories.Remove(category);
+        }
+
+        // 🔹 Lưu thay đổi
+        public async Task SaveChangesAsync()
+        {
+            await _context.SaveChangesAsync();
+        }
     }
 }

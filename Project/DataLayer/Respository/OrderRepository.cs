@@ -29,6 +29,18 @@ namespace Project.DataLayer.Respository
                 .FirstOrDefaultAsync(o => o.OrderId == id);
         }
 
+        // 🔹 Lấy tất cả order (admin)
+        public async Task<List<Order>> GetAllOrdersAsync()
+        {
+            return await _context.Orders
+                .Include(o => o.OrderDetails)
+                    .ThenInclude(od => od.Variant)
+                        .ThenInclude(v => v!.Product)
+                .Include(o => o.User)
+                .OrderByDescending(o => o.OrderDate)
+                .ToListAsync();
+        }
+
         // 🔹 Lấy danh sách order theo user
         public async Task<List<Order>> GetOrdersByUserIdAsync(int userId)
         {
@@ -39,6 +51,16 @@ namespace Project.DataLayer.Respository
                 .Where(o => o.UserId == userId)
                 .OrderByDescending(o => o.OrderDate)
                 .ToListAsync();
+        }
+
+        // 🔹 Cập nhật trạng thái order (admin)
+        public async Task UpdateStatusAsync(int orderId, string status)
+        {
+            var order = await _context.Orders.FindAsync(orderId);
+            if (order != null)
+            {
+                order.OrderStatus = status;
+            }
         }
 
         // 🔹 Lấy inventory theo variant để check + trừ kho

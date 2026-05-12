@@ -11,10 +11,12 @@
     public class UserService : IUserService
     {
         private readonly IUserRepository _repo;
+        private readonly IJwtService _jwtService;
 
-        public UserService(IUserRepository repo)
+        public UserService(IUserRepository repo, IJwtService jwtService)
         {
             _repo = repo;
+            _jwtService = jwtService;
         }
 
         public UserResponse Register(RegisterRequest request)
@@ -32,7 +34,7 @@
                 Phone = request.Phone,
                 FullName = request.FullName,
                 CreatedAt = DateTime.Now,
-                RoleId = 1
+                RoleId = 2  // Customer role for public registration
             };
 
             _repo.Add(user);
@@ -48,7 +50,7 @@
             };
         }
 
-        public UserResponse Login(LoginRequest request)
+        public LoginResponse Login(LoginRequest request)
         {
             var user = _repo.GetByIdentifier(request.Identifier);
 
@@ -58,13 +60,19 @@
             if (user.PasswordHash != HashPassword(request.Password))
                 throw new UnauthorizedException("Wrong password");
 
-            return new UserResponse
+            var roleName = _repo.GetRoleNameById(user.RoleId) ?? "Customer";
+            var token = _jwtService.GenerateToken(user, roleName);
+            var expiresAt = DateTime.UtcNow.AddHours(1);
+
+            return new LoginResponse
             {
                 UserId = user.UserId,
                 Username = user.Username,
                 Email = user.Email,
-                Phone = user.Phone ?? string.Empty,
-                FullName = user.FullName ?? string.Empty
+                FullName = user.FullName ?? string.Empty,
+                Role = roleName,
+                Token = token,
+                ExpiresAt = expiresAt
             };
         }
 
@@ -122,6 +130,39 @@
                 Status = u.Status ?? string.Empty,
                 CreatedAt = u.CreatedAt
             }).ToList();
+        }
+
+        // 🔹 Admin tạo tài khoản Staff (RoleId = 3)
+        public UserResponse CreateStaff(CreateStaffRequest request)
+        {
+            var userExist = _repo.GetByIdentifier(request.Username);
+
+            if (userExist != null)
+                throw new ConflictException("Username already exists");
+
+            var user = new User
+            {
+                Username = request.Username,
+                PasswordHash = HashPassword(request.Password),
+                Email = request.Email,
+                Phone = request.Phone,
+                FullName = request.FullName,
+                CreatedAt = DateTime.Now,
+                RoleId = 3,  // Staff role
+                Status = "active"
+            };
+
+            _repo.Add(user);
+            _repo.Save();
+
+            return new UserResponse
+            {
+                UserId = user.UserId,
+                Username = user.Username,
+                Email = user.Email,
+                Phone = user.Phone ?? string.Empty,
+                FullName = user.FullName ?? string.Empty
+            };
         }
 
         private string HashPassword(string password)

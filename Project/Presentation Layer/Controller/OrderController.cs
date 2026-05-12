@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Project.ApplicationLogic.DTOs;
 using Project.ApplicationLogic.Service;
@@ -7,6 +8,7 @@ namespace Project.PresentationLayer.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [AllowAnonymous]
     public class OrderController : ControllerBase
     {
         private readonly IOrderService _service;
@@ -14,6 +16,40 @@ namespace Project.PresentationLayer.Controllers
         public OrderController(IOrderService service)
         {
             _service = service;
+        }
+
+        // 🔹 GET: api/order/all  (admin — tất cả đơn hàng)
+        [HttpGet("all")]
+        public async Task<IActionResult> GetAll()
+        {
+            try
+            {
+                var result = await _service.GetAllOrdersAsync();
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        // 🔹 PUT: api/order/{id}/status  (admin — cập nhật trạng thái)
+        [HttpPut("{id}/status")]
+        public async Task<IActionResult> UpdateStatus(int id, [FromBody] UpdateOrderStatusRequest request)
+        {
+            try
+            {
+                await _service.UpdateOrderStatusAsync(id, request.Status);
+                return Ok(new { message = "Order status updated" });
+            }
+            catch (NotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
 
         // 🔹 POST: api/order

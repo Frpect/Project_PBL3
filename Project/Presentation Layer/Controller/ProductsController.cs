@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Project.ApplicationLogic.DTOs;
 using Project.ApplicationLogic.Service;
 
@@ -6,6 +7,7 @@ namespace Project.PresentationLayer.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [AllowAnonymous]
     public class ProductsController : ControllerBase
     {
         private readonly IProductService _service;
