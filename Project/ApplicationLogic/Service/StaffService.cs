@@ -70,7 +70,7 @@ namespace Project.ApplicationLogic.Service
                 Email = request.Email,
                 FullName = request.FullName,
                 Phone = request.Phone,
-                RoleId = request.RoleId,
+                RoleId = 2,
                 Status = "active",
                 CreatedAt = DateTime.Now
             };
