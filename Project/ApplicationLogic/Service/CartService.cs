@@ -88,8 +88,8 @@ namespace Project.ApplicationLogic.Service
                 CartItemId = ci.CartItemId,
                 VariantId = ci.VariantId ?? 0,
                 ProductName = ci.Variant?.Product?.ProductName ?? string.Empty,
-                Size = ci.Variant?.Size ?? string.Empty,
-                Color = ci.Variant?.Color ?? string.Empty,
+                Size = ci.Variant?.Size?.SizeName ?? string.Empty,
+                Color = ci.Variant?.Color?.ColorName ?? string.Empty,
                 Price = ci.Price ?? 0,
                 Quantity = ci.Quantity ?? 0
             }).ToList();
@@ -100,6 +100,21 @@ namespace Project.ApplicationLogic.Service
                 Items = items,
                 Total = items.Sum(i => i.Price * i.Quantity)
             };
+        }
+
+        public async Task<CartResponse> SyncCartAsync(CartSyncRequest request)
+        {
+            foreach (var line in request.Items.Where(i => i.Quantity > 0))
+            {
+                await AddItemAsync(new AddToCartRequest
+                {
+                    UserId = request.UserId,
+                    VariantId = line.VariantId,
+                    Quantity = line.Quantity
+                });
+            }
+
+            return await GetCartAsync(request.UserId);
         }
     }
 }

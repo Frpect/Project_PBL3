@@ -11,10 +11,12 @@ namespace Project.PresentationLayer.Controllers
     public class ProductsController : ControllerBase
     {
         private readonly IProductService _service;
+        private readonly IInventoryService _inventoryService;
 
-        public ProductsController(IProductService service)
+        public ProductsController(IProductService service, IInventoryService inventoryService)
         {
             _service = service;
+            _inventoryService = inventoryService;
         }
 
         // 🔹 GET: api/products
@@ -22,6 +24,14 @@ namespace Project.PresentationLayer.Controllers
         public async Task<IActionResult> GetAll()
         {
             var result = await _service.GetAllAsync();
+            return Ok(result);
+        }
+
+        // GET: api/Products/featured?filter=bestseller|new&take=8
+        [HttpGet("featured")]
+        public async Task<IActionResult> Featured([FromQuery] string? filter, [FromQuery] int take = 12, CancellationToken cancellationToken = default)
+        {
+            var result = await _service.GetFeaturedAsync(filter, take, cancellationToken);
             return Ok(result);
         }
 
@@ -82,6 +92,21 @@ namespace Project.PresentationLayer.Controllers
             catch (Exception ex)
             {
                 return NotFound(new { message = ex.Message });
+            }
+        }
+
+        // GET /api/products/minimal
+        [HttpGet("minimal")]
+        public async Task<IActionResult> GetMinimal()
+        {
+            try
+            {
+                var result = await _inventoryService.GetProductsMinimalAsync();
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
             }
         }
     }

@@ -5,6 +5,7 @@ namespace Project.DataLayer.Respository
     public interface IProductRepository
     {
         Task<List<Product>> GetAllAsync();
+        Task<List<Product>> GetFeaturedAsync(string filter, int take, CancellationToken cancellationToken = default);
         Task<Product?> GetByIdAsync(int id);
 
         Task AddAsync(Product product);

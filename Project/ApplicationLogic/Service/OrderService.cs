@@ -60,7 +60,7 @@ namespace Project.ApplicationLogic.Service
                 DiscountAmount = discount,
                 OrderStatus = "pending",
                 OrderDate = DateTime.Now,
-                ShippingAddress = request.ShippingAddress
+                ShippingAddressId = request.ShippingAddressId
             };
 
             await _orderRepo.AddOrderAsync(order);
@@ -135,6 +135,22 @@ namespace Project.ApplicationLogic.Service
             await _orderRepo.SaveChangesAsync();
         }
 
+        public async Task<List<OrderListItemDto>> GetRecentSummariesAsync(int limit, CancellationToken cancellationToken = default)
+        {
+            var take = limit <= 0 ? 5 : limit;
+            var orders = await _orderRepo.GetRecentOrdersAsync(take, cancellationToken);
+            return orders.Select(o => new OrderListItemDto
+            {
+                OrderId = o.OrderId,
+                UserId = o.UserId,
+                OrderStatus = o.OrderStatus ?? string.Empty,
+                TotalAmount = o.TotalAmount ?? 0,
+                DiscountAmount = o.DiscountAmount ?? 0,
+                FinalAmount = (o.TotalAmount ?? 0) - (o.DiscountAmount ?? 0),
+                OrderDate = o.OrderDate ?? DateTime.MinValue
+            }).ToList();
+        }
+
         // 🔹 Hủy đơn hàng (chỉ cho phép khi đang ở trạng thái pending)
         public async Task CancelOrderAsync(int orderId)
         {
@@ -157,8 +173,8 @@ namespace Project.ApplicationLogic.Service
             {
                 VariantId = od.VariantId ?? 0,
                 ProductName = od.Variant?.Product?.ProductName ?? string.Empty,
-                Size = od.Variant?.Size ?? string.Empty,
-                Color = od.Variant?.Color ?? string.Empty,
+                Size = od.Variant?.Size?.SizeName ?? string.Empty,
+                Color = od.Variant?.Color?.ColorName ?? string.Empty,
                 Price = od.Price ?? 0,
                 Quantity = od.Quantity ?? 0
             }).ToList();
@@ -171,9 +187,16 @@ namespace Project.ApplicationLogic.Service
                 DiscountAmount = order.DiscountAmount ?? 0,
                 FinalAmount = (order.TotalAmount ?? 0) - (order.DiscountAmount ?? 0),
                 OrderDate = order.OrderDate ?? DateTime.Now,
-                ShippingAddress = order.ShippingAddress ?? string.Empty,
+                ShippingAddress = FormatAddress(order.ShippingAddress),
                 Items = items
             };
+        }
+        private static string FormatAddress(Address? addr)
+        {
+            if (addr == null) return string.Empty;
+            var parts = new[] { addr.StreetAddress, addr.Ward, addr.District, addr.Province }
+                .Where(p => !string.IsNullOrWhiteSpace(p));
+            return string.Join(", ", parts);
         }
     }
 }
