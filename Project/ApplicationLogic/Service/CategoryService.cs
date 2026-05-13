@@ -73,6 +73,9 @@ namespace Project.ApplicationLogic.Service
             var category = await _repo.GetByIdAsync(id)
                 ?? throw new NotFoundException("Category not found");
 
+            if (await _repo.HasRelatedDataAsync(id))
+                throw new Exception("Cannot delete because it is being used.");
+
             await _repo.DeleteAsync(category.CategoryId);
             await _repo.SaveChangesAsync();
         }

@@ -99,7 +99,7 @@ namespace Project.DataLayer.Respository
         public async Task<bool> CategoryExistsAsync(int categoryId)
         {
             return await _context.Categories
-                .AnyAsync(c => c.CategoryId == categoryId && c.DeletedAt == null);
+                .AnyAsync(c => c.CategoryId == categoryId);
         }
 
         // 🔹 Lưu thay đổi xuống DB
