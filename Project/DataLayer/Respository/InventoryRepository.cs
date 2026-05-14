@@ -22,8 +22,7 @@ namespace Project.DataLayer.Respository
                     .ThenInclude(v => v.Size)
                 .Include(i => i.Variant)
                     .ThenInclude(v => v.Color)
-                .Where(i => i.Variant != null && i.Variant.DeletedAt == null
-                    && i.Variant.Product != null && i.Variant.Product.DeletedAt == null)
+                .Where(i => i.Variant != null && i.Variant.Product != null)
                 .AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(query))
@@ -59,11 +58,10 @@ namespace Project.DataLayer.Respository
         public async Task<List<Product>> GetProductsWithVariantsAsync()
         {
             return await _context.Products
-                .Include(p => p.ProductVariants.Where(v => v.DeletedAt == null))
+                .Include(p => p.ProductVariants)
                     .ThenInclude(v => v.Size)
-                .Include(p => p.ProductVariants.Where(v => v.DeletedAt == null))
+                .Include(p => p.ProductVariants)
                     .ThenInclude(v => v.Color)
-                .Where(p => p.DeletedAt == null)
                 .OrderBy(p => p.ProductName)
                 .ToListAsync();
         }

@@ -4,7 +4,7 @@ namespace Project.ApplicationLogic.Service
 {
     public interface IProductService
     {
-        Task<List<ProductResponse>> GetAllAsync();
+        Task<List<ProductResponse>> GetAllAsync(string? search = null);
         Task<List<ProductResponse>> GetFeaturedAsync(string? filter, int take = 12, CancellationToken cancellationToken = default);
         Task<ProductDetailResponse> GetByIdAsync(int id);
 

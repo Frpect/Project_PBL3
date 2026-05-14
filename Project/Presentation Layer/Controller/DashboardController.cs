@@ -24,7 +24,7 @@ namespace Project.PresentationLayer.Controllers
         {
             var totalOrders = await _context.Orders.CountAsync();
             var totalCustomers = await _context.Users.CountAsync();
-            var totalProducts = await _context.Products.CountAsync(p => p.DeletedAt == null);
+            var totalProducts = await _context.Products.CountAsync();
             var totalRevenue = await _context.Orders.SumAsync(o => (decimal?)(o.TotalAmount ?? 0)) ?? 0m;
 
             var dto = new DashboardSummaryResponse
