@@ -7,7 +7,6 @@ namespace Project.PresentationLayer.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [AllowAnonymous]
     public class ProductsController : ControllerBase
     {
         private readonly IProductService _service;
@@ -20,6 +19,7 @@ namespace Project.PresentationLayer.Controllers
         }
 
         // 🔹 GET: api/products
+        [AllowAnonymous]
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
@@ -28,6 +28,7 @@ namespace Project.PresentationLayer.Controllers
         }
 
         // GET: api/Products/featured?filter=bestseller|new&take=8
+        [AllowAnonymous]
         [HttpGet("featured")]
         public async Task<IActionResult> Featured([FromQuery] string? filter, [FromQuery] int take = 12, CancellationToken cancellationToken = default)
         {
@@ -36,6 +37,7 @@ namespace Project.PresentationLayer.Controllers
         }
 
         // 🔹 GET: api/products/{id}
+        [AllowAnonymous]
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
@@ -51,6 +53,7 @@ namespace Project.PresentationLayer.Controllers
         }
 
         // 🔹 POST: api/products
+        [Authorize(Policy = "StaffOrAdmin")]
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] ProductRequest request)
         {
@@ -66,6 +69,7 @@ namespace Project.PresentationLayer.Controllers
         }
 
         // 🔹 PUT: api/products/{id}
+        [Authorize(Policy = "StaffOrAdmin")]
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, [FromBody] ProductRequest request)
         {
@@ -81,6 +85,7 @@ namespace Project.PresentationLayer.Controllers
         }
 
         // 🔹 DELETE: api/products/{id}
+        [Authorize(Policy = "StaffOrAdmin")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
@@ -96,6 +101,7 @@ namespace Project.PresentationLayer.Controllers
         }
 
         // GET /api/products/minimal
+        [Authorize(Policy = "StaffOrAdmin")]
         [HttpGet("minimal")]
         public async Task<IActionResult> GetMinimal()
         {

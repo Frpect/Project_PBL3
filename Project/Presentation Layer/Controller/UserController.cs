@@ -8,7 +8,7 @@ namespace Project.Presentation_Layer.Controller
 {
     [ApiController]
     [Route("user")]
-    [AllowAnonymous]
+    [Authorize]
     public class UserController : ControllerBase
     {
         private readonly IUserService _service;

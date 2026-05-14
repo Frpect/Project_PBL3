@@ -8,7 +8,7 @@ namespace Project.PresentationLayer.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [AllowAnonymous]
+    [Authorize]
     public class OrderController : ControllerBase
     {
         private readonly IOrderService _service;
@@ -19,6 +19,7 @@ namespace Project.PresentationLayer.Controllers
         }
 
         // 🔹 GET: api/order/all  (admin — tất cả đơn hàng)
+        [Authorize(Policy = "StaffOrAdmin")]
         [HttpGet("all")]
         public async Task<IActionResult> GetAll()
         {
@@ -34,6 +35,7 @@ namespace Project.PresentationLayer.Controllers
         }
 
         // 🔹 PUT: api/order/{id}/status  (admin — cập nhật trạng thái)
+        [Authorize(Policy = "StaffOrAdmin")]
         [HttpPut("{id}/status")]
         public async Task<IActionResult> UpdateStatus(int id, [FromBody] UpdateOrderStatusRequest request)
         {

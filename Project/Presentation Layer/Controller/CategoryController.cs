@@ -8,7 +8,6 @@ namespace Project.PresentationLayer.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [AllowAnonymous]
     public class CategoryController : ControllerBase
     {
         private readonly ICategoryService _service;
@@ -19,6 +18,7 @@ namespace Project.PresentationLayer.Controllers
         }
 
         // 🔹 GET: api/category
+        [AllowAnonymous]
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
@@ -27,6 +27,7 @@ namespace Project.PresentationLayer.Controllers
         }
 
         // 🔹 POST: api/category
+        [Authorize(Policy = "StaffOrAdmin")]
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CategoryRequest request)
         {
@@ -42,6 +43,7 @@ namespace Project.PresentationLayer.Controllers
         }
 
         // 🔹 PUT: api/category/{id}
+        [Authorize(Policy = "StaffOrAdmin")]
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, [FromBody] CategoryRequest request)
         {
@@ -61,6 +63,7 @@ namespace Project.PresentationLayer.Controllers
         }
 
         // 🔹 DELETE: api/category/{id}
+        [Authorize(Policy = "StaffOrAdmin")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {

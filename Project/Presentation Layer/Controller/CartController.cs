@@ -8,7 +8,7 @@ namespace Project.PresentationLayer.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [AllowAnonymous]
+    [Authorize]
     public class CartController : ControllerBase
     {
         private readonly ICartService _service;

@@ -7,8 +7,6 @@ var ic = A.icon, fp = A.formatPrice, fd = A.formatDate, PC = A.ProductCard, SB =
 A.pages = A.pages || {};
 
 A.pages.home = function() {
-  var bestSellers = A.mockProducts.filter(function(p){return p.isBestSeller;}).slice(0,4);
-  var newArrivals = A.mockProducts.filter(function(p){return p.isNew;}).slice(0,4);
   var banners = A.heroBanners;
   var content = '<div>' +
     '<div class="relative overflow-hidden" id="hero-carousel"><div class="flex transition-transform duration-500" id="carousel-track">' +
@@ -21,11 +19,9 @@ A.pages.home = function() {
     A.mockCategories.filter(function(c){return !c.parentId;}).slice(0,8).map(function(cat){
       return '<a href="#/shop/'+cat.slug+'" class="group bg-surface rounded-xl p-6 text-center hover:shadow-md transition-all"><h3 class="font-semibold group-hover:text-accent transition-colors">'+cat.name+'</h3></a>';
     }).join('') + '</div></div></section>' +
-    '<section class="py-12 bg-surface"><div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"><div class="flex items-center justify-between mb-8"><h2 class="text-2xl font-bold">Sản phẩm bán chạy</h2><a href="#/shop" class="text-sm text-primary hover:underline font-medium">Xem tất cả →</a></div><div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">' +
-    bestSellers.map(function(p){return PC(p);}).join('') + '</div></div></section>' +
+    '<section class="py-12 bg-surface"><div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"><div class="flex items-center justify-between mb-8"><h2 class="text-2xl font-bold">Sản phẩm bán chạy</h2><a href="#/shop" class="text-sm text-primary hover:underline font-medium">Xem tất cả →</a></div><div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6" id="home-bestsellers"><p class="col-span-full text-center py-8 text-text-secondary">Đang tải...</p></div></div></section>' +
     '<section class="py-12 bg-accent text-white"><div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center"><h2 class="text-3xl font-bold mb-4">Miễn phí vận chuyển</h2><p class="text-lg mb-6">Cho đơn hàng từ 500.000đ</p><a href="#/shop" class="btn bg-white text-accent hover:bg-gray-100 btn-lg">Mua sắm ngay</a></div></section>' +
-    '<section class="py-12 bg-white"><div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"><div class="flex items-center justify-between mb-8"><h2 class="text-2xl font-bold">Hàng mới về</h2><a href="#/shop" class="text-sm text-primary hover:underline font-medium">Xem tất cả →</a></div><div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">' +
-    newArrivals.map(function(p){return PC(p);}).join('') + '</div></div></section></div>';
+    '<section class="py-12 bg-white"><div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"><div class="flex items-center justify-between mb-8"><h2 class="text-2xl font-bold">Hàng mới về</h2><a href="#/shop" class="text-sm text-primary hover:underline font-medium">Xem tất cả →</a></div><div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6" id="home-newarrivals"><p class="col-span-full text-center py-8 text-text-secondary">Đang tải...</p></div></div></section></div>';
 
   A.renderClient(content, function() {
     var currentSlide = 0, total = banners.length;
@@ -42,74 +38,110 @@ A.pages.home = function() {
     if (next) next.addEventListener('click', function() { goTo(currentSlide + 1); });
     dots.forEach(function(d) { d.addEventListener('click', function() { goTo(parseInt(d.dataset.slide)); }); });
     setInterval(function() { goTo(currentSlide + 1); }, 5000);
+    // Load products from API
+    A.apiFetch('/api/products?featured=bestseller&take=4').then(function(r){return r.json();}).then(function(data){
+      var el=document.getElementById('home-bestsellers');
+      if(el) el.innerHTML=data.length?data.map(function(p){return PC({id:p.productId,name:p.productName,code:p.sku||'',category:p.categoryName||'',basePrice:p.basePrice||p.price||0,salePrice:p.salePrice||null,images:[p.imageUrl||'https://placehold.co/400x400?text=No+Image'],variants:[],status:'active',isNew:false,isBestSeller:true});}).join(''):'<p class="col-span-full text-center py-8 text-text-secondary">Không có sản phẩm</p>';
+      A.initIcons();
+    }).catch(function(){});
+    A.apiFetch('/api/products?featured=new&take=4').then(function(r){return r.json();}).then(function(data){
+      var el=document.getElementById('home-newarrivals');
+      if(el) el.innerHTML=data.length?data.map(function(p){return PC({id:p.productId,name:p.productName,code:p.sku||'',category:p.categoryName||'',basePrice:p.basePrice||p.price||0,salePrice:p.salePrice||null,images:[p.imageUrl||'https://placehold.co/400x400?text=No+Image'],variants:[],status:'active',isNew:true,isBestSeller:false});}).join(''):'<p class="col-span-full text-center py-8 text-text-secondary">Không có sản phẩm</p>';
+      A.initIcons();
+    }).catch(function(){});
   });
 };
 
 // ===== Shop Page =====
 A.pages.shop = function(categorySlug) {
-  var parentCategories = A.mockCategories.filter(function(c){return !c.parentId;});
-  var allSizes = []; var allColors = [];
-  A.mockProducts.forEach(function(p){ p.variants.forEach(function(v){ if(allSizes.indexOf(v.size)===-1) allSizes.push(v.size); if(allColors.indexOf(v.color)===-1) allColors.push(v.color); }); });
-
+  var allProducts = [], allCategories = [], allSizes = [], allColors = [];
   var content = '<div class="py-8 bg-surface min-h-screen"><div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">' +
     '<h1 class="text-3xl font-bold mb-6">Sản phẩm</h1><div class="flex gap-8">' +
     '<aside class="hidden md:block w-64 flex-shrink-0"><div class="bg-white rounded-xl border border-border p-6 sticky top-24">' +
     '<h3 class="font-semibold mb-4">Bộ lọc</h3>' +
-    '<div class="mb-6"><h4 class="text-sm font-medium mb-3">Danh mục</h4><div class="space-y-2"><label class="flex items-center gap-2 text-sm cursor-pointer"><input type="radio" name="category" value="" '+(categorySlug?'':'checked')+' class="accent-primary" data-filter="category" />Tất cả</label>' +
-    parentCategories.map(function(cat){ return '<label class="flex items-center gap-2 text-sm cursor-pointer"><input type="radio" name="category" value="'+cat.slug+'" '+(categorySlug===cat.slug?'checked':'')+' class="accent-primary" data-filter="category" />'+cat.name+'</label>'; }).join('') + '</div></div>' +
+    '<div class="mb-6"><h4 class="text-sm font-medium mb-3">Danh mục</h4><div class="space-y-2" id="shop-cat-filters"><label class="flex items-center gap-2 text-sm cursor-pointer"><input type="radio" name="category" value="" checked class="accent-primary" data-filter="category" />Tất cả</label></div></div>' +
     '<div class="mb-6"><h4 class="text-sm font-medium mb-3">Khoảng giá</h4><div class="space-y-2"><label class="flex items-center gap-2 text-sm cursor-pointer"><input type="radio" name="price" value="" checked class="accent-primary" data-filter="price" />Tất cả</label><label class="flex items-center gap-2 text-sm cursor-pointer"><input type="radio" name="price" value="0-300000" class="accent-primary" data-filter="price" />Dưới 300.000đ</label><label class="flex items-center gap-2 text-sm cursor-pointer"><input type="radio" name="price" value="300000-500000" class="accent-primary" data-filter="price" />300.000đ - 500.000đ</label><label class="flex items-center gap-2 text-sm cursor-pointer"><input type="radio" name="price" value="500000-99999999" class="accent-primary" data-filter="price" />Trên 500.000đ</label></div></div>' +
-    '<div class="mb-6"><h4 class="text-sm font-medium mb-3">Size</h4><div class="flex flex-wrap gap-2">' + allSizes.map(function(s){return '<button class="px-3 py-1.5 border border-border rounded-lg text-sm hover:bg-surface transition-colors" data-filter-size="'+s+'">'+s+'</button>';}).join('') + '</div></div>' +
+    '<div class="mb-6"><h4 class="text-sm font-medium mb-3">Size</h4><div class="flex flex-wrap gap-2" id="shop-size-filters"></div></div>' +
     '<button class="btn btn-outline w-full text-sm" id="clear-filters">Xóa bộ lọc</button></div></aside>' +
-    '<div class="flex-1"><div class="flex items-center justify-between mb-6"><p class="text-sm text-text-secondary" id="product-count"></p>' +
+    '<div class="flex-1"><div class="flex items-center justify-between mb-6"><p class="text-sm text-text-secondary" id="product-count">Đang tải...</p>' +
     '<select class="custom-select w-48" id="sort-select"><option value="default">Mặc định</option><option value="price-asc">Giá thấp đến cao</option><option value="price-desc">Giá cao đến thấp</option><option value="name-asc">Tên A-Z</option><option value="newest">Mới nhất</option></select></div>' +
-    '<div class="grid grid-cols-2 md:grid-cols-3 gap-6" id="products-grid"></div></div></div></div></div>';
+    '<div class="grid grid-cols-2 md:grid-cols-3 gap-6" id="products-grid"><p class="col-span-full text-center py-12 text-text-secondary">Đang tải...</p></div></div></div></div></div>';
 
   A.renderClient(content, function() {
-    var selCat = categorySlug || '', selPrice = '', selSize = '', sortBy = 'default';
+    var selCat = '', selPrice = '', selSize = '', sortBy = 'default';
+    function mapProduct(p) {
+      return {id:p.productId,name:p.productName,code:p.sku||'',category:p.categoryName||'',basePrice:p.basePrice||p.price||0,salePrice:p.salePrice||null,images:[p.imageUrl||'https://placehold.co/400x400?text=No+Image'],variants:[],status:'active',isNew:false,isBestSeller:false};
+    }
     function filterRender() {
-      var filtered = A.mockProducts.slice();
-      if (selCat) { var cat = A.mockCategories.find(function(c){return c.slug===selCat;}); if(cat) filtered = filtered.filter(function(p){return p.category===cat.name;}); }
+      var filtered = allProducts.slice();
+      if (selCat) filtered = filtered.filter(function(p){return p.category===selCat;});
       if (selPrice) { var parts = selPrice.split('-').map(Number); filtered = filtered.filter(function(p){ var pr = p.salePrice||p.basePrice; return pr>=parts[0]&&pr<=parts[1]; }); }
-      if (selSize) filtered = filtered.filter(function(p){return p.variants.some(function(v){return v.size===selSize;});});
+      if (selSize) filtered = filtered.filter(function(p){return p.variants&&p.variants.some(function(v){return v.size===selSize;});});
       switch(sortBy) {
         case 'price-asc': filtered.sort(function(a,b){return (a.salePrice||a.basePrice)-(b.salePrice||b.basePrice);}); break;
         case 'price-desc': filtered.sort(function(a,b){return (b.salePrice||b.basePrice)-(a.salePrice||a.basePrice);}); break;
         case 'name-asc': filtered.sort(function(a,b){return a.name.localeCompare(b.name);}); break;
-        case 'newest': filtered.sort(function(a,b){return new Date(b.createdAt)-new Date(a.createdAt);}); break;
       }
       var grid = document.getElementById('products-grid');
       var count = document.getElementById('product-count');
       if(grid){ grid.innerHTML = filtered.length>0 ? filtered.map(function(p){return PC(p);}).join('') : '<p class="col-span-full text-center text-text-secondary py-12">Không tìm thấy sản phẩm phù hợp</p>'; A.initIcons(); }
       if(count) count.textContent = filtered.length + ' sản phẩm';
     }
-    document.querySelectorAll('[data-filter="category"]').forEach(function(el){el.addEventListener('change',function(){selCat=el.value;filterRender();});});
-    document.querySelectorAll('[data-filter="price"]').forEach(function(el){el.addEventListener('change',function(){selPrice=el.value;filterRender();});});
-    document.querySelectorAll('[data-filter-size]').forEach(function(btn){btn.addEventListener('click',function(){
-      selSize=selSize===btn.dataset.filterSize?'':btn.dataset.filterSize;
-      document.querySelectorAll('[data-filter-size]').forEach(function(b){b.className='px-3 py-1.5 border rounded-lg text-sm transition-colors '+(b.dataset.filterSize===selSize?'bg-primary text-white border-primary':'border-border hover:bg-surface');});
-      filterRender();
-    });});
+    function bindFilters() {
+      document.querySelectorAll('[data-filter="category"]').forEach(function(el){el.addEventListener('change',function(){selCat=el.value;filterRender();});});
+      document.querySelectorAll('[data-filter="price"]').forEach(function(el){el.addEventListener('change',function(){selPrice=el.value;filterRender();});});
+      document.querySelectorAll('[data-filter-size]').forEach(function(btn){btn.addEventListener('click',function(){
+        selSize=selSize===btn.dataset.filterSize?'':btn.dataset.filterSize;
+        document.querySelectorAll('[data-filter-size]').forEach(function(b){b.className='px-3 py-1.5 border rounded-lg text-sm transition-colors '+(b.dataset.filterSize===selSize?'bg-primary text-white border-primary':'border-border hover:bg-surface');});
+        filterRender();
+      });});
+    }
     var sortSel = document.getElementById('sort-select');
     if(sortSel) sortSel.addEventListener('change',function(e){sortBy=e.target.value;filterRender();});
     var clearBtn = document.getElementById('clear-filters');
     if(clearBtn) clearBtn.addEventListener('click',function(){selCat='';selPrice='';selSize='';
-      document.querySelectorAll('[data-filter="category"]')[0].checked=true;
-      document.querySelectorAll('[data-filter="price"]')[0].checked=true;
+      var r0=document.querySelectorAll('[data-filter="category"]')[0]; if(r0) r0.checked=true;
+      var r1=document.querySelectorAll('[data-filter="price"]')[0]; if(r1) r1.checked=true;
       document.querySelectorAll('[data-filter-size]').forEach(function(b){b.className='px-3 py-1.5 border border-border rounded-lg text-sm hover:bg-surface transition-colors';});
       filterRender();
     });
-    filterRender();
+    // Load data from API
+    Promise.all([
+      A.apiFetch('/api/products').then(function(r){return r.json();}),
+      A.apiFetch('/api/category').then(function(r){return r.json();})
+    ]).then(function(results) {
+      allProducts = (results[0]||[]).map(mapProduct);
+      allCategories = results[1]||[];
+      // Build category filters
+      var catEl = document.getElementById('shop-cat-filters');
+      if(catEl) catEl.innerHTML = '<label class="flex items-center gap-2 text-sm cursor-pointer"><input type="radio" name="category" value="" checked class="accent-primary" data-filter="category" />Tất cả</label>' +
+        allCategories.filter(function(c){return !c.parentId;}).map(function(c){return '<label class="flex items-center gap-2 text-sm cursor-pointer"><input type="radio" name="category" value="'+c.name+'" '+(c.slug===categorySlug?'checked':'')+' class="accent-primary" data-filter="category" />'+c.name+'</label>';}).join('');
+      if(categorySlug) { var found=allCategories.find(function(c){return c.slug===categorySlug;}); if(found) selCat=found.name; }
+      bindFilters();
+      filterRender();
+    }).catch(function(){ document.getElementById('products-grid').innerHTML='<p class="col-span-full text-center py-12 text-error">Không thể tải sản phẩm</p>'; });
   });
 };
 
 // ===== Product Detail =====
 A.pages.productDetail = function(productId) {
-  var product = A.mockProducts.find(function(p){return p.id===productId;});
-  if(!product){ A.renderClient('<div class="min-h-screen flex items-center justify-center"><div class="text-center"><h2 class="text-2xl font-semibold mb-4">Sản phẩm không tồn tại</h2><a href="#/shop" class="btn btn-default">Về trang sản phẩm</a></div></div>'); return; }
-  var dp = product.salePrice||product.basePrice, hd = !!product.salePrice;
-  var sizes = [], colors = [];
-  product.variants.forEach(function(v){if(sizes.indexOf(v.size)===-1)sizes.push(v.size);if(colors.indexOf(v.color)===-1)colors.push(v.color);});
-  var related = A.mockProducts.filter(function(p){return p.id!==product.id&&p.category===product.category;}).slice(0,4);
+  A.renderClient('<div class="min-h-screen flex items-center justify-center"><p class="text-text-secondary">Đang tải...</p></div>');
+  A.apiFetch('/api/products/'+productId).then(function(r){
+    if(!r.ok) throw new Error('not found');
+    return r.json();
+  }).then(function(raw){
+    var product = {
+      id: raw.productId, name: raw.productName, code: raw.sku||'',
+      category: raw.categoryName||'', description: raw.description||'',
+      basePrice: raw.basePrice||raw.price||0, salePrice: raw.salePrice||null,
+      images: (raw.images&&raw.images.length) ? raw.images.map(function(i){return i.imageUrl||i;}) : ['https://placehold.co/400x400?text=No+Image'],
+      variants: (raw.variants||[]).map(function(v){return {id:v.variantId,productId:raw.productId,size:v.size||v.sizeName||'',color:v.color||v.colorName||'',stock:v.stock||0,sku:v.sku||'',price:v.price||raw.price||0};}),
+      status:'active'
+    };
+    var dp = product.salePrice||product.basePrice, hd = !!product.salePrice;
+    var sizes = [], colors = [];
+    product.variants.forEach(function(v){if(sizes.indexOf(v.size)===-1)sizes.push(v.size);if(colors.indexOf(v.color)===-1)colors.push(v.color);});
+    var related = [];
 
   var content = '<div class="py-8 bg-white min-h-screen"><div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">' +
     '<nav class="mb-8 flex items-center gap-2 text-sm"><a href="#/" class="text-text-secondary hover:text-primary">Trang chủ</a><span class="text-text-secondary">/</span><a href="#/shop" class="text-text-secondary hover:text-primary">Sản phẩm</a><span class="text-text-secondary">/</span><span class="text-primary">'+product.name+'</span></nav>' +
@@ -128,7 +160,7 @@ A.pages.productDetail = function(productId) {
 
   A.renderClient(content, function() {
     var selSize='', selColor='', qty=1;
-    function getVariant(){return product.variants.find(function(v){return(!selSize||v.size===selSize)&&(!selColor||v.color===selColor);});}
+    function getVariant(){return product.variants.find(function(v){return v.size===selSize&&v.color===selColor;});}
     function updateUI(){
       var variant=getVariant();var maxQty=variant?variant.stock:0;
       var si=document.getElementById('stock-info');if(si&&selSize&&variant)si.textContent='Còn '+variant.stock+' sản phẩm';
@@ -160,6 +192,9 @@ A.pages.productDetail = function(productId) {
     if(bnb)bnb.addEventListener('click',function(){if(acb)acb.click();A.navigateTo('/cart');});
     updateUI();
   });
+  }).catch(function(){
+    A.renderClient('<div class="min-h-screen flex items-center justify-center"><div class="text-center"><h2 class="text-2xl font-semibold mb-4">Sản phẩm không tồn tại</h2><a href="#/shop" class="btn btn-default">Về trang sản phẩm</a></div></div>');
+  });
 };
 
 // ===== Cart =====
@@ -177,7 +212,7 @@ A.pages.cart = function() {
     document.querySelectorAll('[data-qty-minus]').forEach(function(b){b.addEventListener('click',function(){var c=A.getCart(),item=c.find(function(x){return x.variantId===b.dataset.qtyMinus;});if(item&&item.quantity>1){A.updateCartItem(b.dataset.qtyMinus,item.quantity-1);A.pages.cart();}});});
     document.querySelectorAll('[data-qty-plus]').forEach(function(b){b.addEventListener('click',function(){var c=A.getCart(),item=c.find(function(x){return x.variantId===b.dataset.qtyPlus;});if(item&&item.quantity<item.stock){A.updateCartItem(b.dataset.qtyPlus,item.quantity+1);A.pages.cart();}});});
     var cb=document.getElementById('checkout-btn');
-    if(cb)cb.addEventListener('click',function(){if(!A.getCurrentUser()){A.toast.error('Vui lòng đăng nhập');A.navigateTo('/login?redirect=/checkout');return;}A.navigateTo('/checkout');});
+    if(cb)cb.addEventListener('click',function(){if(!A.getToken()){A.toast.error('Vui lòng đăng nhập');A.navigateTo('/login?redirect=/checkout');return;}A.navigateTo('/checkout');});
   });
 };
 
@@ -192,8 +227,28 @@ A.pages.checkout = function() {
   A.renderClient(content, function(){
     document.getElementById('checkout-form').addEventListener('submit',function(e){
       e.preventDefault();
+      var user=A.getCurrentUser();
+      if(!user){A.navigateTo('/login?redirect=/checkout');return;}
       var btn=document.getElementById('place-order-btn');btn.disabled=true;btn.textContent='Đang xử lý...';
-      setTimeout(function(){A.clearCart();var oid='ORD-2024-'+Date.now();A.navigateTo('/payment/result?status=success&orderId='+oid);A.toast.success('Đặt hàng thành công');},1500);
+      var payMethod=document.querySelector('input[name="payment"]:checked');
+      var body={
+        userId:user.id,
+        shippingAddress:document.getElementById('co-address').value,
+        paymentMethod:payMethod?payMethod.value:'cod',
+        items:A.getCart().map(function(i){return {variantId:i.variantId,quantity:i.quantity,price:i.price};})
+      };
+      A.apiFetch('/api/order',{method:'POST',body:JSON.stringify(body)})
+        .then(function(r){return r.json();})
+        .then(function(data){
+          A.clearCart();
+          var oid=data.orderId||data.orderNumber||('ORD-'+Date.now());
+          A.navigateTo('/payment/result?status=success&orderId='+oid);
+          A.toast.success('Đặt hàng thành công');
+        })
+        .catch(function(err){
+          A.toast.error(err.message||'Đặt hàng thất bại');
+          btn.disabled=false;btn.textContent='Đặt hàng';
+        });
     });
   });
 };
@@ -208,13 +263,14 @@ A.pages.login = function() {
         identifier: document.getElementById('login-email').value,
         password: document.getElementById('login-password').value
       };
-      fetch('http://localhost:5247/user/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
+      fetch(A.API_BASE+'/user/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
         .then(function(res){
           if(!res.ok) return res.json().then(function(err){throw new Error(err.message||'Đăng nhập thất bại');});
           return res.json();
         })
         .then(function(data){
-          A.setCurrentUser({id:data.userId,email:data.email,phone:data.phone,name:data.fullName,username:data.username,role:'customer',addresses:[]});
+          if(data.token) A.setToken(data.token);
+          A.setCurrentUser({id:data.userId,email:data.email,phone:data.phone,name:data.fullName,username:data.username,role:(data.role||'customer').toLowerCase(),addresses:[]});
           A.toast.success('Đăng nhập thành công');
           var q=new URLSearchParams(window.location.hash.split('?')[1]||'');
           A.navigateTo(q.get('redirect')||'/');
@@ -241,7 +297,7 @@ A.pages.register = function() {
         phone: document.getElementById('reg-phone').value || null,
         fullName: document.getElementById('reg-fullname').value
       };
-      fetch('http://localhost:5247/user/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
+      fetch(A.API_BASE+'/user/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
         .then(function(res){
           if(!res.ok) return res.json().then(function(err){throw new Error(err.message||'Đăng ký thất bại');});
           return res.json();
@@ -266,19 +322,39 @@ A.pages.forgotPassword = function(){
 // ===== Profile =====
 A.pages.profile = function(){
   var user=A.getCurrentUser();
-  if(!user){A.renderClient('<div class="min-h-screen bg-surface flex items-center justify-center"><div class="text-center"><h2 class="text-2xl font-semibold mb-4">Vui lòng đăng nhập</h2><a href="#/login" class="btn btn-default">Đăng nhập</a></div></div>');return;}
-  var content='<div class="py-8 bg-surface min-h-screen"><div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8"><h1 class="text-3xl font-bold mb-8">Tài khoản của tôi</h1><div class="tabs-list mb-6"><button class="tab-trigger active" data-tab="profile">Thông tin cá nhân</button><button class="tab-trigger" data-tab="addresses">Địa chỉ</button></div><div class="tab-content active" id="tab-profile"><div class="bg-white rounded-xl border border-border p-6"><h2 class="text-xl font-semibold mb-6">Thông tin cá nhân</h2><form id="profile-form" class="space-y-4 max-w-2xl"><div><label class="label">Họ và tên</label><input class="input" value="'+user.name+'" /></div><div><label class="label">Email</label><input class="input" type="email" value="'+user.email+'" /></div><div><label class="label">Số điện thoại</label><input class="input" type="tel" value="'+user.phone+'" /></div><div class="flex gap-4"><button type="submit" class="btn btn-default">Lưu thay đổi</button><button type="button" class="btn btn-outline" onclick="App.setCurrentUser(null);App.toast.success(\'Đã đăng xuất\');App.navigateTo(\'/\')">Đăng xuất</button></div></form></div></div><div class="tab-content" id="tab-addresses"><div class="bg-white rounded-xl border border-border p-6"><h2 class="text-xl font-semibold mb-6">Địa chỉ của tôi</h2><div class="space-y-4">'+(user.addresses||[]).map(function(a){return '<div class="border border-border rounded-lg p-4"><p class="font-medium">'+a.name+'</p><p class="text-sm text-text-secondary">'+a.phone+'</p><p class="text-sm text-text-secondary mt-2">'+a.address+'</p>'+(a.isDefault?'<span class="inline-block mt-2 text-xs bg-primary text-white px-2 py-1 rounded">Mặc định</span>':'')+'</div>';}).join('')+'</div></div></div></div></div>';
-  A.renderClient(content,function(){
-    document.querySelectorAll('.tab-trigger').forEach(function(t){t.addEventListener('click',function(){document.querySelectorAll('.tab-trigger').forEach(function(x){x.classList.remove('active');});document.querySelectorAll('.tab-content').forEach(function(x){x.classList.remove('active');});t.classList.add('active');document.getElementById('tab-'+t.dataset.tab).classList.add('active');});});
-    var pf=document.getElementById('profile-form');if(pf)pf.addEventListener('submit',function(e){e.preventDefault();A.toast.success('Cập nhật thành công');});
-  });
+  if(!user||!A.getToken()){A.renderClient('<div class="min-h-screen bg-surface flex items-center justify-center"><div class="text-center"><h2 class="text-2xl font-semibold mb-4">Vui lòng đăng nhập</h2><a href="#/login" class="btn btn-default">Đăng nhập</a></div></div>');return;}
+  function renderProfile(u){
+    var content='<div class="py-8 bg-surface min-h-screen"><div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8"><h1 class="text-3xl font-bold mb-8">Tài khoản của tôi</h1><div class="tabs-list mb-6"><button class="tab-trigger active" data-tab="profile">Thông tin cá nhân</button><button class="tab-trigger" data-tab="addresses">Địa chỉ</button></div><div class="tab-content active" id="tab-profile"><div class="bg-white rounded-xl border border-border p-6"><h2 class="text-xl font-semibold mb-6">Thông tin cá nhân</h2><form id="profile-form" class="space-y-4 max-w-2xl"><div><label class="label">Họ và tên</label><input class="input" id="pf-name" value="'+(u.fullName||u.name||'')+'"></div><div><label class="label">Email</label><input class="input" type="email" id="pf-email" value="'+(u.email||'')+'"></div><div><label class="label">Số điện thoại</label><input class="input" type="tel" id="pf-phone" value="'+(u.phone||'')+'"></div><div class="flex gap-4"><button type="submit" class="btn btn-default">Lưu thay đổi</button><button type="button" class="btn btn-outline" id="logout-btn">Đăng xuất</button></div></form></div></div><div class="tab-content" id="tab-addresses"><div class="bg-white rounded-xl border border-border p-6"><h2 class="text-xl font-semibold mb-6">Địa chỉ của tôi</h2><div class="space-y-4">'+(u.addresses||[]).map(function(a){return '<div class="border border-border rounded-lg p-4"><p class="font-medium">'+(a.recipientName||a.name||'')+'</p><p class="text-sm text-text-secondary">'+(a.phone||'')+'</p><p class="text-sm text-text-secondary mt-2">'+(a.ward||a.address||'')+', '+(a.district||'')+', '+(a.province||'')+'</p>'+(a.isDefault?'<span class="inline-block mt-2 text-xs bg-primary text-white px-2 py-1 rounded">Mặc định</span>':'')+'</div>';}).join('')+'</div></div></div></div></div>';
+    A.renderClient(content,function(){
+      document.querySelectorAll('.tab-trigger').forEach(function(t){t.addEventListener('click',function(){document.querySelectorAll('.tab-trigger').forEach(function(x){x.classList.remove('active');});document.querySelectorAll('.tab-content').forEach(function(x){x.classList.remove('active');});t.classList.add('active');document.getElementById('tab-'+t.dataset.tab).classList.add('active');});});
+      var pf=document.getElementById('profile-form');
+      if(pf)pf.addEventListener('submit',function(e){
+        e.preventDefault();
+        var body={fullName:document.getElementById('pf-name').value,phone:document.getElementById('pf-phone').value,email:document.getElementById('pf-email').value};
+        A.apiFetch('/user/profile/'+u.id,{method:'PUT',body:JSON.stringify(body)})
+          .then(function(r){return r.json();})
+          .then(function(){A.toast.success('Cập nhật thành công');})
+          .catch(function(){A.toast.error('Cập nhật thất bại');});
+      });
+      var lb=document.getElementById('logout-btn');
+      if(lb)lb.addEventListener('click',function(){A.clearToken();A.setCurrentUser(null);A.toast.success('Đã đăng xuất');A.navigateTo('/');});
+    });
+  }
+  A.apiFetch('/user/profile/'+user.id).then(function(r){return r.json();})
+    .then(function(data){renderProfile(data);})
+    .catch(function(){renderProfile(user);});
 };
 
 // ===== Orders =====
 A.pages.orders = function(){
-  var orders=A.mockOrders;
-  var content='<div class="py-8 bg-surface min-h-screen"><div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8"><h1 class="text-3xl font-bold mb-8">Đơn hàng của tôi</h1><div class="space-y-4">'+orders.map(function(o){return '<div class="bg-white rounded-xl border border-border p-6"><div class="flex items-start justify-between mb-4"><div><p class="font-semibold text-lg">'+o.orderNumber+'</p><p class="text-sm text-text-secondary">'+fd(o.createdAt)+'</p></div><div class="text-right">'+SB(o.status)+' '+SB(o.paymentStatus,'payment')+'</div></div><div class="space-y-3 mb-4">'+o.items.map(function(i){return '<div class="flex gap-4"><img src="'+i.image+'" alt="" class="w-16 h-16 object-cover rounded-lg" /><div class="flex-1"><p class="font-medium">'+i.productName+'</p><p class="text-sm text-text-secondary">'+i.variantLabel+' x '+i.quantity+'</p></div><p class="font-semibold">'+fp(i.price*i.quantity)+'</p></div>';}).join('')+'</div><div class="flex items-center justify-between pt-4 border-t border-border"><p class="text-lg font-semibold">Tổng: '+fp(o.total)+'</p><a href="#/orders/'+o.id+'" class="btn btn-outline">Xem chi tiết</a></div></div>';}).join('')+'</div></div></div>';
-  A.renderClient(content);
+  var user=A.getCurrentUser();
+  if(!user||!A.getToken()){A.navigateTo('/login?redirect=/orders');return;}
+  A.renderClient('<div class="py-8 bg-surface min-h-screen"><div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8"><h1 class="text-3xl font-bold mb-8">Đơn hàng của tôi</h1><p class="text-text-secondary">Đang tải...</p></div></div>');
+  A.apiFetch('/api/order?userId='+user.id).then(function(r){return r.json();})
+  .then(function(orders){
+    var content='<div class="py-8 bg-surface min-h-screen"><div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8"><h1 class="text-3xl font-bold mb-8">Đơn hàng của tôi</h1>'+(orders.length?'<div class="space-y-4">'+orders.map(function(o){return '<div class="bg-white rounded-xl border border-border p-6"><div class="flex items-start justify-between mb-4"><div><p class="font-semibold text-lg">'+(o.orderNumber||('#'+o.orderId))+'</p><p class="text-sm text-text-secondary">'+fd(o.orderDate||o.createdAt)+'</p></div><div class="text-right">'+SB(o.orderStatus||o.status)+'</div></div><div class="flex items-center justify-between pt-4 border-t border-border"><p class="text-lg font-semibold">Tổng: '+fp(o.totalAmount||o.total||0)+'</p><a href="#/orders/'+o.orderId+'" class="btn btn-outline">Xem chi tiết</a></div></div>';}).join('')+'</div>':'<p class="text-text-secondary">Chưa có đơn hàng nào</p>')+'</div></div>';
+    A.renderClient(content);
+  }).catch(function(){A.renderClient('<div class="py-8 text-center text-error">Không thể tải đơn hàng</div>');});
 };
 
 A.pages.orderDetail = function(orderId){
@@ -303,8 +379,12 @@ A.pages.categories = function(){
 };
 
 A.pages.promotions = function(){
-  var content='<div class="py-12 bg-surface min-h-screen"><div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8"><h1 class="text-3xl font-bold mb-2">Khuyến mãi</h1><p class="text-text-secondary mb-8">Sử dụng mã giảm giá khi thanh toán</p><div class="space-y-4">'+A.mockPromotions.map(function(p){return '<div class="bg-white rounded-xl border border-border p-6 flex items-center gap-6"><div class="flex-shrink-0 w-16 h-16 rounded-full bg-red-50 flex items-center justify-center">'+ic('tag','w-8 h-8 text-accent')+'</div><div class="flex-1"><div class="flex items-center gap-2 mb-2"><span class="badge bg-accent text-white">'+p.code+'</span><span class="badge badge-outline">'+(p.type==='percentage'?'-'+p.value+'%':'-'+fp(p.value))+'</span></div><p class="font-medium mb-1">'+p.description+'</p>'+(p.minOrder?'<p class="text-sm text-text-secondary">Đơn tối thiểu: '+fp(p.minOrder)+'</p>':'')+'</div><button class="btn btn-default" data-copy="'+p.code+'">'+ic('copy','w-4 h-4')+' Sao chép</button></div>';}).join('')+'</div></div></div>';
-  A.renderClient(content,function(){document.querySelectorAll('[data-copy]').forEach(function(b){b.addEventListener('click',function(){navigator.clipboard.writeText(b.dataset.copy);A.toast.success('Đã sao chép mã');});});});
+  A.renderClient('<div class="py-12 bg-surface min-h-screen"><div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8"><h1 class="text-3xl font-bold mb-2">Khuyến mãi</h1><p class="text-text-secondary mb-8">Đang tải...</p></div></div>');
+  A.apiFetch('/api/discounts').then(function(r){return r.json();})
+  .then(function(promos){
+    var content='<div class="py-12 bg-surface min-h-screen"><div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8"><h1 class="text-3xl font-bold mb-2">Khuyến mãi</h1><p class="text-text-secondary mb-8">Sử dụng mã giảm giá khi thanh toán</p><div class="space-y-4">'+(promos.length?promos.map(function(p){var code=p.code||p.promotionName||'';var val=p.discountType==='percentage'?'-'+p.discountValue+'%':'-'+fp(p.discountValue||0);return '<div class="bg-white rounded-xl border border-border p-6 flex items-center gap-6"><div class="flex-shrink-0 w-16 h-16 rounded-full bg-red-50 flex items-center justify-center">'+ic('tag','w-8 h-8 text-accent')+'</div><div class="flex-1"><div class="flex items-center gap-2 mb-2"><span class="badge bg-accent text-white">'+code+'</span><span class="badge badge-outline">'+val+'</span></div></div><button class="btn btn-default" data-copy="'+code+'">'+ic('copy','w-4 h-4')+' Sao chép</button></div>';}).join(''):'<p class="text-text-secondary">Không có khuyến mãi</p>')+'</div></div></div>';
+    A.renderClient(content,function(){document.querySelectorAll('[data-copy]').forEach(function(b){b.addEventListener('click',function(){navigator.clipboard.writeText(b.dataset.copy);A.toast.success('Đã sao chép mã');});});A.initIcons();});
+  }).catch(function(){A.renderClient('<div class="py-12 text-center text-error">Không thể tải khuyến mãi</div>');});
 };
 
 A.pages.about = function(){

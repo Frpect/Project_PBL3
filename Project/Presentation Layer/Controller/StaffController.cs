@@ -8,7 +8,7 @@ namespace Project.PresentationLayer.Controllers
 {
     [ApiController]
     [Route("api/admin/[controller]")]
-    [AllowAnonymous]
+    [Authorize(Policy = "AdminOnly")]
     public class StaffController : ControllerBase
     {
         private readonly IStaffService _service;

@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Project.ApplicationLogic.DTOs;
@@ -7,6 +8,7 @@ namespace Project.PresentationLayer.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize(Policy = "StaffOrAdmin")]
     public class DashboardController : ControllerBase
     {
         private readonly AppDbContext _context;

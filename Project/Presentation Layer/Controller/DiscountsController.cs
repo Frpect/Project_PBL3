@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Project.ApplicationLogic.DTOs;
@@ -18,6 +19,7 @@ namespace Project.PresentationLayer.Controllers
         }
 
         // GET /api/Discounts
+        [AllowAnonymous]
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
@@ -37,6 +39,7 @@ namespace Project.PresentationLayer.Controllers
         }
 
         // POST /api/Discounts
+        [Authorize(Policy = "StaffOrAdmin")]
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] PromotionRequest request)
         {
@@ -61,6 +64,7 @@ namespace Project.PresentationLayer.Controllers
         }
 
         // GET /api/Discounts/{id}
+        [AllowAnonymous]
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
@@ -80,6 +84,7 @@ namespace Project.PresentationLayer.Controllers
         }
 
         // PUT /api/Discounts/{id}
+        [Authorize(Policy = "StaffOrAdmin")]
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, [FromBody] PromotionRequest request)
         {
@@ -99,6 +104,7 @@ namespace Project.PresentationLayer.Controllers
         }
 
         // DELETE /api/Discounts/{id}
+        [Authorize(Policy = "StaffOrAdmin")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
@@ -114,6 +120,7 @@ namespace Project.PresentationLayer.Controllers
         }
 
         // POST /api/Discounts/validate
+        [AllowAnonymous]
         [HttpPost("validate")]
         public async Task<IActionResult> Validate([FromBody] ValidatePromotionRequest request)
         {
