@@ -16,9 +16,7 @@ namespace Project.DataLayer.Respository
         // 🔹 Lấy danh sách category
         public async Task<List<Category>> GetAllAsync()
         {
-            return await _context.Categories
-                .Where(c => c.DeletedAt == null)
-                .ToListAsync();
+            return await _context.Categories.ToListAsync();
         }
 
         // 🔹 Lấy category theo id
@@ -46,6 +44,18 @@ namespace Project.DataLayer.Respository
             var category = await _context.Categories.FindAsync(id);
             if (category != null)
                 _context.Categories.Remove(category);
+        }
+
+        // 🔹 Kiểm tra dữ liệu liên quan
+        public async Task<bool> HasRelatedDataAsync(int id)
+        {
+            if (await _context.Products.AnyAsync(p => p.CategoryId == id))
+                return true;
+
+            if (await _context.Categories.AnyAsync(c => c.ParentId == id))
+                return true;
+
+            return await _context.Promotions.AnyAsync(p => p.Categories.Any(c => c.CategoryId == id));
         }
 
         // 🔹 Lưu thay đổi

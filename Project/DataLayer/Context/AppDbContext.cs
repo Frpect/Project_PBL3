@@ -170,9 +170,6 @@ public partial class AppDbContext : DbContext
             entity.Property(e => e.CreatedAt)
                 .HasColumnType("datetime")
                 .HasColumnName("created_at");
-            entity.Property(e => e.DeletedAt)
-                .HasColumnType("datetime")
-                .HasColumnName("deleted_at");
             entity.Property(e => e.Description)
                 .HasMaxLength(255)
                 .IsUnicode(false)

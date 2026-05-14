@@ -9,6 +9,7 @@ namespace Project.DataLayer.Respository
         Task AddAsync(Category category);
         Task UpdateAsync(Category category);
         Task DeleteAsync(int id);
+        Task<bool> HasRelatedDataAsync(int id);
         Task SaveChangesAsync();
     }
 }
