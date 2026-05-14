@@ -15,9 +15,9 @@ namespace Project.ApplicationLogic.Service
         }
 
         // 🔹 Lấy danh sách product (gọn)
-        public async Task<List<ProductResponse>> GetAllAsync()
+        public async Task<List<ProductResponse>> GetAllAsync(string? search = null)
         {
-            var products = await _repo.GetAllAsync();
+            var products = await _repo.GetAllAsync(search);
 
             return products.Select(p => new ProductResponse
             {

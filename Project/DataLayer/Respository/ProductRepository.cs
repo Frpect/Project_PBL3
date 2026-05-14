@@ -14,12 +14,16 @@ namespace Project.DataLayer.Respository
         }
 
         // 🔹 Lấy danh sách product (kèm category)
-        public async Task<List<Product>> GetAllAsync()
+        public async Task<List<Product>> GetAllAsync(string? search = null)
         {
-            return await _context.Products
+            var query = _context.Products
                 .Include(p => p.Category)
-                .Where(p => p.DeletedAt == null)
-                .ToListAsync();
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(search))
+                query = query.Where(p => p.ProductName != null && p.ProductName.Contains(search));
+
+            return await query.ToListAsync();
         }
 
         /// <param name="filter">bestseller | new</param>
@@ -30,8 +34,7 @@ namespace Project.DataLayer.Respository
                 .AsNoTracking()
                 .Include(p => p.Category)
                 .Include(p => p.ProductImages)
-                .Include(p => p.ProductVariants.Where(v => v.DeletedAt == null))
-                .Where(p => p.DeletedAt == null);
+                .Include(p => p.ProductVariants);
 
             if (filter is "bestseller" or "bestsellers" or "hot")
             {
@@ -71,9 +74,9 @@ namespace Project.DataLayer.Respository
         {
             return await _context.Products
                 .Include(p => p.Category)
-                .Include(p => p.ProductVariants.Where(v => v.DeletedAt == null))
+                .Include(p => p.ProductVariants)
                 .Include(p => p.ProductImages)
-                .FirstOrDefaultAsync(p => p.ProductId == id && p.DeletedAt == null);
+                .FirstOrDefaultAsync(p => p.ProductId == id);
         }
 
         // 🔹 Thêm product
@@ -91,8 +94,7 @@ namespace Project.DataLayer.Respository
         // 🔹 Xóa mềm product
         public void Delete(Product product)
         {
-            product.DeletedAt = DateTime.Now;
-            _context.Products.Update(product);
+            _context.Products.Remove(product);
         }
 
         // 🔹 Kiểm tra category tồn tại

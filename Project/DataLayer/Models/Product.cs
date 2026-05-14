@@ -17,8 +17,6 @@ public partial class Product
 
     public DateTime? CreatedAt { get; set; }
 
-    public DateTime? DeletedAt { get; set; }
-
     public virtual Category? Category { get; set; }
 
     public virtual ICollection<ProductImage> ProductImages { get; set; } = new List<ProductImage>();

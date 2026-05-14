@@ -19,8 +19,6 @@ public partial class ProductVariant
 
     public DateTime? CreatedAt { get; set; }
 
-    public DateTime? DeletedAt { get; set; }
-
     public virtual ICollection<CartItem> CartItems { get; set; } = new List<CartItem>();
 
     public virtual Color? Color { get; set; }

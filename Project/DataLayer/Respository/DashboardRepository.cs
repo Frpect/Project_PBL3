@@ -30,7 +30,7 @@ public class DashboardRepository : IDashboardRepository
             .ToListAsync(cancellationToken);
 
         var totalCustomers = await _db.Users.CountAsync(u => u.DeletedAt == null && u.RoleId == 1, cancellationToken);
-        var totalProducts = await _db.Products.CountAsync(p => p.DeletedAt == null, cancellationToken);
+        var totalProducts = await _db.Products.CountAsync(cancellationToken);
 
         return new DashboardSummaryDto
         {
@@ -74,7 +74,7 @@ public class DashboardRepository : IDashboardRepository
             .AsNoTracking()
             .Include(i => i.Variant)
                 .ThenInclude(v => v!.Product)
-            .Where(i => i.Quantity <= threshold && i.Variant != null && i.Variant.DeletedAt == null && i.Variant.Product != null && i.Variant.Product.DeletedAt == null)
+            .Where(i => i.Quantity <= threshold && i.Variant != null && i.Variant.Product != null)
             .OrderBy(i => i.Quantity)
             .Select(i => new LowStockProductDto
             {
@@ -128,7 +128,7 @@ public class DashboardRepository : IDashboardRepository
     {
         return await _db.OrderDetails
             .AsNoTracking()
-            .Where(od => od.Variant != null && od.Variant.Product != null && od.Variant.Product.DeletedAt == null)
+            .Where(od => od.Variant != null && od.Variant.Product != null)
             .Where(od => od.Order != null && od.Order.OrderStatus != "cancelled")
             .GroupBy(od => new { od.Variant!.ProductId, Name = od.Variant.Product!.ProductName ?? "" })
             .Select(g => new TopProductDto
