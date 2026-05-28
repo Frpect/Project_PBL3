@@ -23,9 +23,16 @@ namespace Project.DataLayer.Respository
         public async Task<Order?> GetByIdAsync(int id)
         {
             return await _context.Orders
+                .Include(o => o.User)
                 .Include(o => o.OrderDetails)
                     .ThenInclude(od => od.Variant)
                         .ThenInclude(v => v!.Product)
+                .Include(o => o.OrderDetails)
+                    .ThenInclude(od => od.Variant)
+                        .ThenInclude(v => v!.Size)
+                .Include(o => o.OrderDetails)
+                    .ThenInclude(od => od.Variant)
+                        .ThenInclude(v => v!.Color)
                 .FirstOrDefaultAsync(o => o.OrderId == id);
         }
 
@@ -45,9 +52,16 @@ namespace Project.DataLayer.Respository
         public async Task<List<Order>> GetOrdersByUserIdAsync(int userId)
         {
             return await _context.Orders
+                .Include(o => o.User)
                 .Include(o => o.OrderDetails)
                     .ThenInclude(od => od.Variant)
                         .ThenInclude(v => v!.Product)
+                .Include(o => o.OrderDetails)
+                    .ThenInclude(od => od.Variant)
+                        .ThenInclude(v => v!.Size)
+                .Include(o => o.OrderDetails)
+                    .ThenInclude(od => od.Variant)
+                        .ThenInclude(v => v!.Color)
                 .Where(o => o.UserId == userId)
                 .OrderByDescending(o => o.OrderDate)
                 .ToListAsync();

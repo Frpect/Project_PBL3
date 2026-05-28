@@ -16,7 +16,11 @@ namespace Project.DataLayer.Respository
         // 🔹 Lấy danh sách category
         public async Task<List<Category>> GetAllAsync()
         {
-            return await _context.Categories.ToListAsync();
+            return await _context.Categories
+                .Include(c => c.Parent)
+                .OrderBy(c => c.ParentId)
+                .ThenBy(c => c.CategoryName)
+                .ToListAsync();
         }
 
         // 🔹 Lấy category theo id

@@ -29,7 +29,6 @@ export function EditProductPage() {
     code: '',
     name: '',
     description: '',
-    material: '',
     category: '',
     status: 'active' as 'active' | 'inactive',
     images: [] as string[],
@@ -54,7 +53,6 @@ export function EditProductPage() {
           code: p.sku || '',
           name: p.productName,
           description: p.description ?? '',
-          material: p.material ?? '',
           category: p.categoryId ? String(p.categoryId) : '',
           status: p.isActive ? 'active' : 'inactive',
           images: p.images ?? [],
@@ -88,12 +86,11 @@ export function EditProductPage() {
     }
     try {
       await updateProduct(product!.productId, {
-        code: formData.code,
-        name: formData.name,
-        categoryId: formData.category,
+        productName: formData.name,
+        categoryId: Number(formData.category),
         description: formData.description,
-        material: formData.material,
-        status: formData.status,
+        isActive: formData.status === 'active',
+        basePrice: variants.length > 0 ? (variants[0].price ?? 0) : 0,
         variants: variants.map(v => ({ id: v.id, size: v.size, color: v.color, stock: v.stock, price: v.price, sku: v.sku })),
       });
       toast.success('Cập nhật sản phẩm thành công!');
@@ -276,15 +273,6 @@ export function EditProductPage() {
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 rows={4}
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="material">Chất liệu</Label>
-              <Input
-                id="material"
-                value={formData.material}
-                onChange={(e) => setFormData({ ...formData, material: e.target.value })}
               />
             </div>
 

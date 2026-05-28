@@ -50,7 +50,9 @@ namespace Project.PresentationLayer.Controllers
             try
             {
                 await _service.UpdateAsync(id, request);
-                return Ok(new { message = "Category updated successfully" });
+                var categories = await _service.GetAllAsync();
+                var updated = categories.FirstOrDefault(c => c.CategoryId == id);
+                return Ok(updated);
             }
             catch (NotFoundException ex)
             {

@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '.
 import { Badge } from '../../components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/card';
 import { useState, useEffect } from 'react';
-import { getProducts, deleteProduct, mapApiProduct, toggleProductStatus } from '../../lib/api';
+import { getProducts, deleteProduct, mapApiProduct, toggleProductStatus, getCategories, ApiCategory } from '../../lib/api';
 import type { Product } from '../../lib/mock-data';
 import { toast } from 'sonner';
 import { useAuth } from '../../lib/auth';
@@ -25,18 +25,30 @@ export function ProductsListPage() {
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [catList, setCatList] = useState<ApiCategory[]>([]);
 
   useEffect(() => {
     getProducts().then(data => { setAllProducts(data.map(mapApiProduct)); setLoading(false); }).catch(() => setLoading(false));
+    getCategories().then(setCatList).catch(() => {});
   }, []);
 
-  const categories = [...new Set(allProducts.map(p => p.category))];
+  const getChildCategoryNames = (catName: string): string[] => {
+    const cat = catList.find(c => c.categoryName === catName);
+    if (!cat) return [catName];
+    const children = catList.filter(c => c.parentId === cat.categoryId);
+    return children.length > 0 ? children.map(c => c.categoryName) : [catName];
+  };
+
+  const categories = catList.length > 0
+    ? catList.map(c => c.categoryName)
+    : [...new Set(allProducts.map(p => p.category))];
 
   const filteredProducts = allProducts.filter(p => {
     const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       String(p.id ?? '').includes(searchQuery);
     const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
-    const matchesCategory = categoryFilter === 'all' || p.category === categoryFilter;
+    const matchingNames = categoryFilter === 'all' ? [] : getChildCategoryNames(categoryFilter);
+    const matchesCategory = categoryFilter === 'all' || matchingNames.includes(p.category) || p.category === categoryFilter;
     return matchesSearch && matchesStatus && matchesCategory;
   });
 
@@ -152,9 +164,22 @@ export function ProductsListPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Tất cả</SelectItem>
-                {categories.map(cat => (
-                  <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                ))}
+                {catList.length > 0
+                  ? catList.filter(c => !c.parentId).map(parent => (
+                      <SelectItem key={parent.categoryId} value={parent.categoryName}>
+                        {parent.categoryName}
+                      </SelectItem>
+                    )).concat(
+                      catList.filter(c => !!c.parentId).map(child => (
+                        <SelectItem key={child.categoryId} value={child.categoryName}>
+                          &nbsp;&nbsp;↳ {child.categoryName}
+                        </SelectItem>
+                      ))
+                    )
+                  : categories.map(cat => (
+                      <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                    ))
+                }
               </SelectContent>
             </Select>
           </div>

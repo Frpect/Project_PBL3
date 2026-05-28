@@ -65,8 +65,8 @@ export function AnalyticsPage() {
       let curRev = 0, curOrd = 0, prevRev = 0, prevOrd = 0;
       data.forEach(o => {
         const d = new Date(o.createdAt || o.orderDate || '');
-        const isCompleted = (o.orderStatus || o.status) === 'completed';
-        const amt = isCompleted ? (o.totalAmount || o.total || 0) : 0;
+        const isCancelled = (o.orderStatus || o.status) === 'cancelled';
+        const amt = isCancelled ? 0 : (o.totalAmount || o.total || 0);
         if (d >= curFrom && d < curTo) { curRev += amt; curOrd++; }
         else if (d >= prevFrom && d < prevTo) { prevRev += amt; prevOrd++; }
       });
@@ -79,7 +79,8 @@ export function AnalyticsPage() {
         for (let h = 0; h < 24; h++) hourly[h] = { revenue: 0, orders: 0 };
         data.forEach(o => {
           const d = new Date(o.createdAt || o.orderDate || '');
-          const rev = (o.orderStatus || o.status) === 'completed' ? (o.totalAmount || o.total || 0) : 0;
+          const isCancelled = (o.orderStatus || o.status) === 'cancelled';
+          const rev = isCancelled ? 0 : (o.totalAmount || o.total || 0);
           if (d >= curFrom && d < curTo) {
             hourly[d.getHours()].revenue += rev;
             hourly[d.getHours()].orders += 1;
@@ -92,7 +93,8 @@ export function AnalyticsPage() {
         for (let d = 0; d < 7; d++) weekly[d] = { revenue: 0, orders: 0 };
         data.forEach(o => {
           const d = new Date(o.createdAt || o.orderDate || '');
-          const rev = (o.orderStatus || o.status) === 'completed' ? (o.totalAmount || o.total || 0) : 0;
+          const isCancelled2 = (o.orderStatus || o.status) === 'cancelled';
+          const rev = isCancelled2 ? 0 : (o.totalAmount || o.total || 0);
           if (d >= curFrom && d < curTo) {
             weekly[d.getDay()].revenue += rev;
             weekly[d.getDay()].orders += 1;
@@ -105,7 +107,8 @@ export function AnalyticsPage() {
         for (let m = 0; m < 12; m++) monthly[m] = { revenue: 0, orders: 0 };
         data.forEach(o => {
           const d = new Date(o.createdAt || o.orderDate || '');
-          const rev = (o.orderStatus || o.status) === 'completed' ? (o.totalAmount || o.total || 0) : 0;
+          const isCancelled3 = (o.orderStatus || o.status) === 'cancelled';
+          const rev = isCancelled3 ? 0 : (o.totalAmount || o.total || 0);
           if (d >= curFrom && d < curTo) {
             monthly[d.getMonth()].revenue += rev;
             monthly[d.getMonth()].orders += 1;
@@ -119,7 +122,8 @@ export function AnalyticsPage() {
         for (let d = 1; d <= daysInMonth; d++) daily[d] = { revenue: 0, orders: 0 };
         data.forEach(o => {
           const d = new Date(o.createdAt || o.orderDate || '');
-          const rev = (o.orderStatus || o.status) === 'completed' ? (o.totalAmount || o.total || 0) : 0;
+          const isCancelled4 = (o.orderStatus || o.status) === 'cancelled';
+          const rev = isCancelled4 ? 0 : (o.totalAmount || o.total || 0);
           if (d >= curFrom && d < curTo) {
             daily[d.getDate()].revenue += rev;
             daily[d.getDate()].orders += 1;

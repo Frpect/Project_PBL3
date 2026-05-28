@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Mvc;
 using Project.ApplicationLogic.Service;
 using Project.ApplicationLogic.DTOs;
 using Project.ExceptionHandling;
+using Project.DataLayer.Models;
+using Project.DataLayer.Respository;
 
 namespace Project.Presentation_Layer.Controller
 {
@@ -12,10 +14,12 @@ namespace Project.Presentation_Layer.Controller
     public class UserController : ControllerBase
     {
         private readonly IUserService _service;
+        private readonly IUserRepository _userRepo;
 
-        public UserController(IUserService service)
+        public UserController(IUserService service, IUserRepository userRepo)
         {
             _service = service;
+            _userRepo = userRepo;
         }
 
         [HttpPost("register")]
@@ -46,6 +50,7 @@ namespace Project.Presentation_Layer.Controller
                     username = result.Username,
                     email = result.Email,
                     fullName = result.FullName,
+                    phone = result.Phone,
                     role = result.Role,
                     token = result.Token,
                     expiresAt = result.ExpiresAt
@@ -86,6 +91,101 @@ namespace Project.Presentation_Layer.Controller
             {
                 return NotFound(new { message = ex.Message });
             }
+        }
+
+        // DELETE /user/{userId}
+        [HttpDelete("{userId}")]
+        public IActionResult DeleteAccount(int userId)
+        {
+            var user = _userRepo.GetById(userId);
+            if (user == null) return NotFound(new { message = "User not found" });
+            user.DeletedAt = DateTime.Now;
+            _userRepo.Save();
+            return Ok(new { message = "Tài khoản đã bị xóa" });
+        }
+
+        // POST /user/change-password
+        [HttpPost("change-password")]
+        public IActionResult ChangePassword([FromBody] ChangePasswordRequest request)
+        {
+            try
+            {
+                var result = _service.ChangePassword(request);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        // GET /user/{userId}/addresses
+        [HttpGet("{userId}/addresses")]
+        public IActionResult GetAddresses(int userId)
+        {
+            var user = _userRepo.GetByIdWithAddresses(userId);
+            if (user == null) return NotFound(new { message = "User not found" });
+            var result = user.Addresses.Select(a => new
+            {
+                addressId = a.AddressId,
+                recipientName = a.RecipientName,
+                phone = a.Phone,
+                province = a.Province,
+                district = a.District,
+                ward = a.Ward,
+                streetAddress = a.StreetAddress,
+                addressType = a.AddressType,
+                isDefault = a.IsDefault ?? false
+            });
+            return Ok(result);
+        }
+
+        // POST /user/{userId}/addresses
+        [HttpPost("{userId}/addresses")]
+        public IActionResult CreateAddress(int userId, [FromBody] CreateAddressRequest request)
+        {
+            var user = _userRepo.GetById(userId);
+            if (user == null) return NotFound(new { message = "User not found" });
+
+            var address = new Address
+            {
+                UserId = userId,
+                RecipientName = request.RecipientName,
+                Phone = request.Phone,
+                Province = request.Province,
+                District = request.District,
+                Ward = request.Ward,
+                StreetAddress = request.StreetAddress,
+                AddressType = request.AddressType,
+                IsDefault = request.IsDefault ?? false
+            };
+
+            _userRepo.AddAddress(address);
+            _userRepo.Save();
+
+            return Ok(new
+            {
+                addressId = address.AddressId,
+                recipientName = address.RecipientName,
+                phone = address.Phone,
+                province = address.Province,
+                district = address.District,
+                ward = address.Ward,
+                streetAddress = address.StreetAddress,
+                addressType = address.AddressType,
+                isDefault = address.IsDefault ?? false
+            });
+        }
+
+        // DELETE /user/{userId}/addresses/{addressId}
+        [HttpDelete("{userId}/addresses/{addressId}")]
+        public IActionResult DeleteAddress(int userId, int addressId)
+        {
+            var address = _userRepo.GetAddressForUser(addressId, userId);
+            if (address == null) return NotFound(new { message = "Address not found" });
+            _userRepo.RemoveAddress(address);
+            _userRepo.Save();
+            return Ok(new { message = "Đã xóa địa chỉ" });
         }
     }
 }

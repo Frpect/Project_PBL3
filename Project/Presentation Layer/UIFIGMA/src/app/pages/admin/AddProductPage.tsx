@@ -24,7 +24,6 @@ export function AddProductPage() {
     name: "",
     category: "",
     description: "",
-    material: "",
     basePrice: "",
   });
 
@@ -158,21 +157,6 @@ export function AddProductPage() {
               }
               rows={4}
               placeholder="Mô tả chi tiết sản phẩm..."
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="material">Chất liệu</Label>
-            <Input
-              id="material"
-              value={formData.material}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  material: e.target.value,
-                })
-              }
-              placeholder="Cotton 100%"
             />
           </div>
 

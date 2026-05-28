@@ -4,6 +4,7 @@ namespace Project.ApplicationLogic.DTOs
     {
         public int InventoryId { get; set; }
         public int VariantId { get; set; }
+        public int ProductId { get; set; }
         public string ProductName { get; set; }
         public string Sku { get; set; }
         public string Size { get; set; }

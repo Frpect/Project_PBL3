@@ -39,7 +39,7 @@ export function CategoriesPage() {
   const handleAddCategory = async () => {
     if (!newCategory.name) { toast.error('Vui lòng nhập tên danh mục'); return; }
     try {
-      const created = await createCategory({ categoryName: newCategory.name, slug: newCategory.slug, description: newCategory.description, isVisible: newCategory.isVisible });
+      const created = await createCategory({ categoryName: newCategory.name, slug: newCategory.slug, description: newCategory.description, isVisible: newCategory.isVisible, parentId: newCategory.parentId ? parseInt(newCategory.parentId) : null });
       setCatList(prev => [...prev, created]);
       setNewCategory({ name: '', slug: '', parentId: '', isVisible: true, description: '' });
       setShowAddDialog(false);

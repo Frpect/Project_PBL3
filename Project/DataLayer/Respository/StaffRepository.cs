@@ -13,12 +13,12 @@ namespace Project.DataLayer.Respository
             _context = context;
         }
 
-        // Get all staff (RoleId != 1, assuming 1 is customer)
+        // Get all staff (RoleId == 3: Staff; Admin=1, Customer=2, Staff=3)
         public async Task<List<User>> GetAllStaffAsync()
         {
             return await _context.Users
                 .Include(u => u.Role)
-                .Where(u => u.RoleId != 1 && u.DeletedAt == null)
+                .Where(u => u.RoleId == 3 && u.DeletedAt == null)
                 .OrderBy(u => u.FullName)
                 .ToListAsync();
         }
@@ -40,6 +40,12 @@ namespace Project.DataLayer.Respository
         {
             return await _context.Users
                 .FirstOrDefaultAsync(u => u.Email == email && u.DeletedAt == null);
+        }
+
+        public async Task<User?> GetByPhoneAsync(string phone)
+        {
+            return await _context.Users
+                .FirstOrDefaultAsync(u => u.Phone == phone && u.DeletedAt == null);
         }
 
         public async Task AddAsync(User user)

@@ -21,6 +21,7 @@ namespace Project.ApplicationLogic.Service
             {
                 InventoryId = i.InventoryId,
                 VariantId = i.VariantId ?? 0,
+                ProductId = i.Variant?.ProductId ?? 0,
                 ProductName = i.Variant?.Product?.ProductName ?? string.Empty,
                 Sku = i.Variant?.Sku ?? string.Empty,
                 Size = i.Variant?.Size?.SizeName ?? string.Empty,

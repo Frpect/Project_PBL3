@@ -13,5 +13,6 @@ namespace Project.ApplicationLogic.Service
         AddressResponse UpdateAddress(int userId, int addressId, AddressUpsertRequest request);
         void DeleteAddress(int userId, int addressId);
         CustomerResponse UpdateCustomer(UpdateCustomerRequest request);
+        void ResetPassword(int userId, string newPassword);
     }
 }

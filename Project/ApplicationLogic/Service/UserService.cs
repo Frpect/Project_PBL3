@@ -22,9 +22,19 @@
         public UserResponse Register(RegisterRequest request)
         {
             var userExist = _repo.GetByIdentifier(request.Username);
-
             if (userExist != null)
-                throw new ConflictException("Username already exists");
+                throw new ConflictException("Tên đăng nhập đã tồn tại");
+
+            var emailExist = _repo.GetByEmail(request.Email);
+            if (emailExist != null)
+                throw new ConflictException("Email đã được sử dụng");
+
+            if (!string.IsNullOrWhiteSpace(request.Phone))
+            {
+                var phoneExist = _repo.GetByPhone(request.Phone);
+                if (phoneExist != null)
+                    throw new ConflictException("Số điện thoại đã được sử dụng");
+            }
 
             var user = new User
             {
@@ -70,6 +80,7 @@
                 Username = user.Username,
                 Email = user.Email,
                 FullName = user.FullName ?? string.Empty,
+                Phone = user.Phone ?? string.Empty,
                 Role = roleName,
                 Token = token,
                 ExpiresAt = expiresAt
@@ -136,9 +147,19 @@
         public UserResponse CreateStaff(CreateStaffRequest request)
         {
             var userExist = _repo.GetByIdentifier(request.Username);
-
             if (userExist != null)
-                throw new ConflictException("Username already exists");
+                throw new ConflictException("Tên đăng nhập đã tồn tại");
+
+            var emailExist = _repo.GetByEmail(request.Email);
+            if (emailExist != null)
+                throw new ConflictException("Email đã được sử dụng");
+
+            if (!string.IsNullOrWhiteSpace(request.Phone))
+            {
+                var phoneExist = _repo.GetByPhone(request.Phone);
+                if (phoneExist != null)
+                    throw new ConflictException("Số điện thoại đã được sử dụng");
+            }
 
             var user = new User
             {
@@ -163,6 +184,17 @@
                 Phone = user.Phone ?? string.Empty,
                 FullName = user.FullName ?? string.Empty
             };
+        }
+
+        public object ChangePassword(ChangePasswordRequest request)
+        {
+            var user = _repo.GetById(request.UserId);
+            if (user == null) throw new NotFoundException("User not found");
+            if (user.PasswordHash != HashPassword(request.CurrentPassword))
+                throw new UnauthorizedException("Mật khẩu hiện tại không đúng");
+            user.PasswordHash = HashPassword(request.NewPassword);
+            _repo.Save();
+            return new { message = "Đổi mật khẩu thành công" };
         }
 
         private string HashPassword(string password)

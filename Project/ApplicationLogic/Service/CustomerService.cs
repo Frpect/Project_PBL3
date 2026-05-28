@@ -1,3 +1,5 @@
+using System.Security.Cryptography;
+using System.Text;
 using Project.ApplicationLogic.DTOs;
 using Project.DataLayer.Models;
 using Project.DataLayer.Respository;
@@ -174,6 +176,15 @@ namespace Project.ApplicationLogic.Service
             _userRepo.Save();
         }
 
+        public void ResetPassword(int userId, string newPassword)
+        {
+            var user = _userRepo.GetById(userId);
+            if (user == null) throw new NotFoundException("Customer not found");
+            using var sha256 = SHA256.Create();
+            user.PasswordHash = Convert.ToBase64String(sha256.ComputeHash(Encoding.UTF8.GetBytes(newPassword)));
+            _userRepo.Save();
+        }
+
         private static AddressResponse MapAddress(Address a) => new()
         {
             AddressId = a.AddressId,
@@ -189,6 +200,8 @@ namespace Project.ApplicationLogic.Service
 
         private static CustomerResponse MapToCustomerResponse(DataLayer.Models.User user)
         {
+            var orders = user.Orders ?? new List<DataLayer.Models.Order>();
+            var completedOrders = orders.Where(o => o.OrderStatus != "cancelled").ToList();
             return new CustomerResponse
             {
                 UserId = user.UserId,
@@ -197,7 +210,9 @@ namespace Project.ApplicationLogic.Service
                 Email = user.Email,
                 Phone = user.Phone ?? string.Empty,
                 Status = user.Status ?? "active",
-                CreatedAt = user.CreatedAt
+                CreatedAt = user.CreatedAt,
+                TotalOrders = orders.Count,
+                TotalSpent = completedOrders.Sum(o => (o.TotalAmount ?? 0) - (o.DiscountAmount ?? 0))
             };
         }
 

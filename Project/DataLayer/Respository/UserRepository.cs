@@ -19,6 +19,16 @@ namespace Project.DataLayer.Respository
                 .FirstOrDefault(u => u.DeletedAt == null && (u.Username == identifier || u.Email == identifier));
         }
 
+        public User? GetByEmail(string email)
+        {
+            return _context.Users.FirstOrDefault(u => u.DeletedAt == null && u.Email == email);
+        }
+
+        public User? GetByPhone(string phone)
+        {
+            return _context.Users.FirstOrDefault(u => u.DeletedAt == null && u.Phone == phone);
+        }
+
         public User? GetById(int userId)
         {
             return _context.Users.FirstOrDefault(u => u.DeletedAt == null && u.UserId == userId);
@@ -46,7 +56,8 @@ namespace Project.DataLayer.Respository
         public List<User> GetCustomers(string? search)
         {
             var query = _context.Users
-                .Where(u => u.DeletedAt == null)
+                .Include(u => u.Orders)
+                .Where(u => u.DeletedAt == null && u.RoleId == 2)
                 .AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(search))

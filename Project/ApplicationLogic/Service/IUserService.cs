@@ -10,5 +10,6 @@ namespace Project.ApplicationLogic.Service
         UserResponse UpdateProfile(int userId, UpdateProfileRequest request);
         List<CustomerResponse> GetCustomers(string? search);
         UserResponse CreateStaff(CreateStaffRequest request);
+        object ChangePassword(ChangePasswordRequest request);
     }
 }

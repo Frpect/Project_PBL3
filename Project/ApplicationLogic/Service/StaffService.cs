@@ -22,13 +22,14 @@ namespace Project.ApplicationLogic.Service
             return staff.Select(u => new StaffResponse
             {
                 UserId = u.UserId,
+                StaffId = u.UserId,
                 Username = u.Username,
                 FullName = u.FullName ?? string.Empty,
                 Email = u.Email,
                 Phone = u.Phone,
                 Status = u.Status ?? "active",
                 CreatedAt = u.CreatedAt,
-                RoleName = u.Role?.RoleName ?? string.Empty
+                Role = u.Role?.RoleName ?? string.Empty
             }).ToList();
         }
 
@@ -41,13 +42,14 @@ namespace Project.ApplicationLogic.Service
             return new StaffResponse
             {
                 UserId = user.UserId,
+                StaffId = user.UserId,
                 Username = user.Username,
                 FullName = user.FullName ?? string.Empty,
                 Email = user.Email,
                 Phone = user.Phone,
                 Status = user.Status ?? "active",
                 CreatedAt = user.CreatedAt,
-                RoleName = user.Role?.RoleName ?? string.Empty
+                Role = user.Role?.RoleName ?? string.Empty
             };
         }
 
@@ -56,12 +58,20 @@ namespace Project.ApplicationLogic.Service
             // Check if username exists
             var existingUsername = await _repo.GetByUsernameAsync(request.Username);
             if (existingUsername != null)
-                throw new Exception("Username already exists");
+                throw new Exception("Tên đăng nhập đã tồn tại");
 
             // Check if email exists
             var existingEmail = await _repo.GetByEmailAsync(request.Email);
             if (existingEmail != null)
-                throw new Exception("Email already exists");
+                throw new Exception("Email đã được sử dụng");
+
+            // Check if phone exists
+            if (!string.IsNullOrWhiteSpace(request.Phone))
+            {
+                var existingPhone = await _repo.GetByPhoneAsync(request.Phone);
+                if (existingPhone != null)
+                    throw new Exception("Số điện thoại đã được sử dụng");
+            }
 
             var user = new User
             {
@@ -70,7 +80,7 @@ namespace Project.ApplicationLogic.Service
                 Email = request.Email,
                 FullName = request.FullName,
                 Phone = request.Phone,
-                RoleId = 2,
+                RoleId = 3,
                 Status = "active",
                 CreatedAt = DateTime.Now
             };
@@ -84,13 +94,14 @@ namespace Project.ApplicationLogic.Service
             return new StaffResponse
             {
                 UserId = created!.UserId,
+                StaffId = created.UserId,
                 Username = created.Username,
                 FullName = created.FullName ?? string.Empty,
                 Email = created.Email,
                 Phone = created.Phone,
                 Status = created.Status ?? "active",
                 CreatedAt = created.CreatedAt,
-                RoleName = created.Role?.RoleName ?? string.Empty
+                Role = created.Role?.RoleName ?? string.Empty
             };
         }
 
@@ -115,13 +126,14 @@ namespace Project.ApplicationLogic.Service
             return new StaffResponse
             {
                 UserId = user.UserId,
+                StaffId = user.UserId,
                 Username = user.Username,
                 FullName = user.FullName ?? string.Empty,
                 Email = user.Email,
                 Phone = user.Phone,
                 Status = user.Status ?? "active",
                 CreatedAt = user.CreatedAt,
-                RoleName = user.Role?.RoleName ?? string.Empty
+                Role = user.Role?.RoleName ?? string.Empty
             };
         }
 
@@ -140,13 +152,14 @@ namespace Project.ApplicationLogic.Service
             return new StaffResponse
             {
                 UserId = user.UserId,
+                StaffId = user.UserId,
                 Username = user.Username,
                 FullName = user.FullName ?? string.Empty,
                 Email = user.Email,
                 Phone = user.Phone,
                 Status = user.Status,
                 CreatedAt = user.CreatedAt,
-                RoleName = user.Role?.RoleName ?? string.Empty
+                Role = user.Role?.RoleName ?? string.Empty
             };
         }
 

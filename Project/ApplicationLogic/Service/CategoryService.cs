@@ -22,7 +22,12 @@ namespace Project.ApplicationLogic.Service
             return categories.Select(c => new CategoryResponse
             {
                 CategoryId = c.CategoryId,
-                CategoryName = c.CategoryName ?? string.Empty
+                CategoryName = c.CategoryName ?? string.Empty,
+                Description = c.Description,
+                Slug = c.Slug,
+                ParentId = c.ParentId,
+                ParentName = c.Parent?.CategoryName,
+                IsVisible = c.IsVisible ?? true
             }).ToList();
         }
 
@@ -36,6 +41,9 @@ namespace Project.ApplicationLogic.Service
             {
                 CategoryName = request.CategoryName,
                 Description = request.Description,
+                Slug = request.Slug,
+                ParentId = request.ParentId,
+                IsVisible = request.IsVisible ?? true,
                 CreatedAt = DateTime.Now,
                 UpdatedAt = DateTime.Now
             };
@@ -46,7 +54,11 @@ namespace Project.ApplicationLogic.Service
             return new CategoryResponse
             {
                 CategoryId = category.CategoryId,
-                CategoryName = category.CategoryName
+                CategoryName = category.CategoryName ?? string.Empty,
+                Description = category.Description,
+                Slug = category.Slug,
+                ParentId = category.ParentId,
+                IsVisible = category.IsVisible ?? true
             };
         }
 
@@ -61,6 +73,9 @@ namespace Project.ApplicationLogic.Service
 
             category.CategoryName = request.CategoryName;
             category.Description = request.Description;
+            category.Slug = request.Slug;
+            category.ParentId = request.ParentId;
+            category.IsVisible = request.IsVisible ?? category.IsVisible ?? true;
             category.UpdatedAt = DateTime.Now;
 
             await _repo.UpdateAsync(category);

@@ -8,6 +8,7 @@ namespace Project.DataLayer.Respository
         Task<User?> GetByIdAsync(int id);
         Task<User?> GetByUsernameAsync(string username);
         Task<User?> GetByEmailAsync(string email);
+        Task<User?> GetByPhoneAsync(string phone);
         Task AddAsync(User user);
         void Update(User user);
         void Delete(User user);

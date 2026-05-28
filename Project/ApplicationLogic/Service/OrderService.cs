@@ -16,33 +16,43 @@ namespace Project.ApplicationLogic.Service
             _orderRepo = orderRepo;
         }
 
-        // 🔹 Đặt order — flow chính: lấy cart → check kho → tính tiền → áp discount → tạo order → trừ kho → lưu lịch sử
+        // 🔹 Đặt order — ưu tiên items từ request (client cart), fallback sang server cart
         public async Task<OrderResponse> PlaceOrderAsync(PlaceOrderRequest request)
         {
-            // Lấy cart
-            var cart = await _cartRepo.GetByUserIdAsync(request.UserId);
+            // Chuẩn hóa danh sách items
+            List<(int variantId, int quantity, decimal price)> orderItems;
 
-            if (cart == null || !cart.CartItems.Any())
-                throw new Exception("Cart is empty");
+            if (request.Items != null && request.Items.Any())
+            {
+                orderItems = request.Items
+                    .Select(i => (i.VariantId, i.Quantity, i.Price))
+                    .ToList();
+            }
+            else
+            {
+                var cart = await _cartRepo.GetByUserIdAsync(request.UserId);
+                if (cart == null || !cart.CartItems.Any())
+                    throw new Exception("Cart is empty");
+                orderItems = cart.CartItems
+                    .Select(i => (i.VariantId ?? 0, i.Quantity ?? 1, i.Price ?? 0m))
+                    .ToList();
+            }
 
             // Check tồn kho + tính tổng tiền
             decimal total = 0;
-            foreach (var item in cart.CartItems)
+            foreach (var (variantId, quantity, price) in orderItems)
             {
-                var inventory = await _orderRepo.GetInventoryByVariantIdAsync(item.VariantId ?? 0);
-
-                if (inventory == null || inventory.Quantity < item.Quantity)
-                    throw new Exception($"Insufficient stock for variant {item.VariantId}");
-
-                total += (item.Price ?? 0) * (item.Quantity ?? 0);
+                var inventory = await _orderRepo.GetInventoryByVariantIdAsync(variantId);
+                if (inventory == null || inventory.Quantity < quantity)
+                    throw new Exception($"Insufficient stock for variant {variantId}");
+                total += price * quantity;
             }
 
-            // Áp dụng discount nếu có promotion
+            // Áp dụng discount
             decimal discount = 0;
             if (request.PromotionId.HasValue)
             {
                 var promotion = await _orderRepo.GetPromotionAsync(request.PromotionId.Value);
-
                 if (promotion != null && promotion.Status == "active")
                 {
                     discount = promotion.DiscountType == "percent"
@@ -67,26 +77,26 @@ namespace Project.ApplicationLogic.Service
             await _orderRepo.SaveChangesAsync();
 
             // Tạo order detail + trừ kho + lưu lịch sử kho
-            foreach (var item in cart.CartItems)
+            foreach (var (variantId, quantity, price) in orderItems)
             {
                 order.OrderDetails.Add(new OrderDetail
                 {
                     OrderId = order.OrderId,
-                    VariantId = item.VariantId,
-                    Quantity = item.Quantity,
-                    Price = item.Price
+                    VariantId = variantId,
+                    Quantity = quantity,
+                    Price = price
                 });
 
-                var inventory = await _orderRepo.GetInventoryByVariantIdAsync(item.VariantId ?? 0);
-                inventory!.Quantity -= item.Quantity;
+                var inventory = await _orderRepo.GetInventoryByVariantIdAsync(variantId);
+                inventory!.Quantity -= quantity;
                 inventory.LastUpdated = DateTime.Now;
 
                 await _orderRepo.AddTransactionAsync(new InventoryTransaction
                 {
-                    VariantId = item.VariantId,
-                    Quantity = -(item.Quantity ?? 0),
-                    Type = "sale",
-                    Note = $"Order #{order.OrderId}",
+                    VariantId = variantId,
+                    Quantity = -quantity,
+                    Type = "Export",
+                    Note = $"Đặt hàng #{order.OrderId}",
                     CreatedAt = DateTime.Now
                 });
             }
@@ -179,15 +189,32 @@ namespace Project.ApplicationLogic.Service
                 Quantity = od.Quantity ?? 0
             }).ToList();
 
+            var status = order.OrderStatus ?? "pending";
+            var total = order.TotalAmount ?? 0;
+            var discount = order.DiscountAmount ?? 0;
+            var orderDate = order.OrderDate ?? DateTime.Now;
+            var customerName = order.User?.FullName ?? order.User?.Username ?? string.Empty;
+            var customerPhone = order.User?.Phone ?? string.Empty;
+
             return new OrderResponse
             {
                 OrderId = order.OrderId,
-                OrderStatus = order.OrderStatus ?? string.Empty,
-                TotalAmount = order.TotalAmount ?? 0,
-                DiscountAmount = order.DiscountAmount ?? 0,
-                FinalAmount = (order.TotalAmount ?? 0) - (order.DiscountAmount ?? 0),
-                OrderDate = order.OrderDate ?? DateTime.Now,
+                OrderNumber = $"ORD{order.OrderId:D6}",
+                OrderStatus = status,
+                Status = status,
+                TotalAmount = total,
+                Total = total,
+                DiscountAmount = discount,
+                Discount = discount,
+                FinalAmount = total - discount,
+                ShippingFee = 30000,
+                OrderDate = orderDate,
+                CreatedAt = orderDate,
                 ShippingAddress = FormatAddress(order.ShippingAddress),
+                CustomerName = customerName,
+                CustomerPhone = customerPhone,
+                CustomerId = order.UserId,
+                PaymentStatus = "pending",
                 Items = items
             };
         }

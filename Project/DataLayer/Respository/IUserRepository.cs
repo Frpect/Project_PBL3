@@ -5,6 +5,8 @@ namespace Project.DataLayer.Respository;
 public interface IUserRepository
     {
         User GetByIdentifier(string identifier);
+        User? GetByEmail(string email);
+        User? GetByPhone(string phone);
         User? GetById(int userId);
         User? GetByIdWithAddresses(int userId);
         User? GetByIdWithOrders(int userId);

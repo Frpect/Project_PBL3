@@ -381,12 +381,6 @@ export function ProductDetailPage() {
                 Mô tả
               </TabsTrigger>
               <TabsTrigger 
-                value="material" 
-                className="px-0 py-3 rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none"
-              >
-                Chất liệu
-              </TabsTrigger>
-              <TabsTrigger 
                 value="care" 
                 className="px-0 py-3 rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none"
               >
@@ -400,35 +394,6 @@ export function ProductDetailPage() {
                   Sản phẩm được thiết kế với form dáng hiện đại, phù hợp với nhiều phong cách khác nhau.
                   Chất liệu cao cấp đảm bảo sự thoải mái khi mặc.
                 </p>
-              </div>
-            </TabsContent>
-            <TabsContent value="material" className="mt-8">
-              <div className="max-w-3xl space-y-6">
-                <div>
-                  <h3 className="font-semibold text-foreground mb-2">Chất liệu</h3>
-                  <p className="text-muted-foreground">{product.material}</p>
-                </div>
-                <div>
-                  <h3 className="font-semibold text-foreground mb-3">Đặc tính</h3>
-                  <ul className="space-y-2 text-muted-foreground">
-                    <li className="flex items-center gap-2">
-                      <span className="w-1.5 h-1.5 rounded-full bg-foreground" />
-                      Mềm mại, thoáng mát
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <span className="w-1.5 h-1.5 rounded-full bg-foreground" />
-                      Thấm hút mồ hôi tốt
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <span className="w-1.5 h-1.5 rounded-full bg-foreground" />
-                      Bền màu, không phai
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <span className="w-1.5 h-1.5 rounded-full bg-foreground" />
-                      Dễ giặt, dễ bảo quản
-                    </li>
-                  </ul>
-                </div>
               </div>
             </TabsContent>
             <TabsContent value="care" className="mt-8">

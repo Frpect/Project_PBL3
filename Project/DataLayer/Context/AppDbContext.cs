@@ -52,7 +52,7 @@ public partial class AppDbContext : DbContext
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-        => optionsBuilder.UseSqlServer("Server=HOANG\\SQLEXPRESS;Database=FASHIONSTORE;Trusted_Connection=True;TrustServerCertificate=True;");
+        => optionsBuilder.UseSqlServer("Server=HOANGVIPPRO\\SQLEXPRESS;Database=FASHIONSTORE;Trusted_Connection=True;TrustServerCertificate=True;");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -67,36 +67,29 @@ public partial class AppDbContext : DbContext
             entity.Property(e => e.AddressId).HasColumnName("address_id");
             entity.Property(e => e.AddressType)
                 .HasMaxLength(20)
-                .IsUnicode(false)
                 .HasDefaultValue("home")
                 .HasColumnName("address_type");
             entity.Property(e => e.District)
-                .HasMaxLength(100)
-                .IsUnicode(false)
+                .HasMaxLength(200)
                 .HasColumnName("district");
             entity.Property(e => e.IsDefault)
                 .HasDefaultValue(false)
                 .HasColumnName("is_default");
             entity.Property(e => e.Phone)
                 .HasMaxLength(20)
-                .IsUnicode(false)
                 .HasColumnName("phone");
             entity.Property(e => e.Province)
-                .HasMaxLength(100)
-                .IsUnicode(false)
+                .HasMaxLength(200)
                 .HasColumnName("province");
             entity.Property(e => e.RecipientName)
                 .HasMaxLength(255)
-                .IsUnicode(false)
                 .HasColumnName("recipient_name");
             entity.Property(e => e.StreetAddress)
-                .HasMaxLength(255)
-                .IsUnicode(false)
+                .HasMaxLength(500)
                 .HasColumnName("street_address");
             entity.Property(e => e.UserId).HasColumnName("user_id");
             entity.Property(e => e.Ward)
-                .HasMaxLength(100)
-                .IsUnicode(false)
+                .HasMaxLength(200)
                 .HasColumnName("ward");
 
             entity.HasOne(d => d.User).WithMany(p => p.Addresses)
@@ -165,20 +158,17 @@ public partial class AppDbContext : DbContext
             entity.Property(e => e.CategoryId).HasColumnName("category_id");
             entity.Property(e => e.CategoryName)
                 .HasMaxLength(255)
-                .IsUnicode(false)
                 .HasColumnName("category_name");
             entity.Property(e => e.CreatedAt)
                 .HasColumnType("datetime")
                 .HasColumnName("created_at");
             entity.Property(e => e.Description)
-                .HasMaxLength(255)
-                .IsUnicode(false)
+                .HasMaxLength(1000)
                 .HasColumnName("description");
             entity.Property(e => e.IsVisible).HasColumnName("is_visible");
             entity.Property(e => e.ParentId).HasColumnName("parent_id");
             entity.Property(e => e.Slug)
                 .HasMaxLength(255)
-                .IsUnicode(false)
                 .HasColumnName("slug");
             entity.Property(e => e.UpdatedAt)
                 .HasColumnType("datetime")
@@ -200,7 +190,6 @@ public partial class AppDbContext : DbContext
             entity.Property(e => e.ColorId).HasColumnName("color_id");
             entity.Property(e => e.ColorName)
                 .HasMaxLength(100)
-                .IsUnicode(false)
                 .HasColumnName("color_name");
         });
 
@@ -235,13 +224,11 @@ public partial class AppDbContext : DbContext
                 .HasColumnType("datetime")
                 .HasColumnName("created_at");
             entity.Property(e => e.Note)
-                .HasMaxLength(255)
-                .IsUnicode(false)
+                .HasMaxLength(500)
                 .HasColumnName("note");
             entity.Property(e => e.Quantity).HasColumnName("quantity");
             entity.Property(e => e.Type)
                 .HasMaxLength(255)
-                .IsUnicode(false)
                 .HasColumnName("type");
             entity.Property(e => e.VariantId).HasColumnName("variant_id");
 
@@ -267,7 +254,6 @@ public partial class AppDbContext : DbContext
                 .HasColumnName("order_date");
             entity.Property(e => e.OrderStatus)
                 .HasMaxLength(255)
-                .IsUnicode(false)
                 .HasDefaultValue("pending")
                 .HasColumnName("order_status");
             entity.Property(e => e.PromotionId).HasColumnName("promotion_id");
@@ -330,11 +316,9 @@ public partial class AppDbContext : DbContext
                 .HasColumnName("payment_date");
             entity.Property(e => e.PaymentMethod)
                 .HasMaxLength(255)
-                .IsUnicode(false)
                 .HasColumnName("payment_method");
             entity.Property(e => e.PaymentStatus)
                 .HasMaxLength(255)
-                .IsUnicode(false)
                 .HasColumnName("payment_status");
 
             entity.HasOne(d => d.Order).WithMany(p => p.Payments)
@@ -359,16 +343,13 @@ public partial class AppDbContext : DbContext
                 .HasColumnType("datetime")
                 .HasColumnName("deleted_at");
             entity.Property(e => e.Description)
-                .HasMaxLength(255)
-                .IsUnicode(false)
+                .HasMaxLength(1000)
                 .HasColumnName("description");
             entity.Property(e => e.ProductName)
                 .HasMaxLength(255)
-                .IsUnicode(false)
                 .HasColumnName("product_name");
             entity.Property(e => e.Status)
                 .HasMaxLength(255)
-                .IsUnicode(false)
                 .HasColumnName("status");
 
             entity.HasOne(d => d.Category).WithMany(p => p.Products)
@@ -390,7 +371,6 @@ public partial class AppDbContext : DbContext
                 .HasColumnName("created_at");
             entity.Property(e => e.ImageUrl)
                 .HasMaxLength(255)
-                .IsUnicode(false)
                 .HasColumnName("image_url");
             entity.Property(e => e.IsPrimary).HasColumnName("is_primary");
             entity.Property(e => e.ProductId).HasColumnName("product_id");
@@ -425,7 +405,6 @@ public partial class AppDbContext : DbContext
             entity.Property(e => e.SizeId).HasColumnName("size_id");
             entity.Property(e => e.Sku)
                 .HasMaxLength(255)
-                .IsUnicode(false)
                 .HasColumnName("sku");
 
             entity.HasOne(d => d.Color).WithMany(p => p.ProductVariants)
@@ -452,7 +431,6 @@ public partial class AppDbContext : DbContext
             entity.Property(e => e.PromotionId).HasColumnName("promotion_id");
             entity.Property(e => e.DiscountType)
                 .HasMaxLength(255)
-                .IsUnicode(false)
                 .HasColumnName("discount_type");
             entity.Property(e => e.DiscountValue)
                 .HasColumnType("decimal(18, 0)")
@@ -462,14 +440,12 @@ public partial class AppDbContext : DbContext
                 .HasColumnName("end_date");
             entity.Property(e => e.PromotionName)
                 .HasMaxLength(255)
-                .IsUnicode(false)
                 .HasColumnName("promotion_name");
             entity.Property(e => e.StartDate)
                 .HasColumnType("datetime")
                 .HasColumnName("start_date");
             entity.Property(e => e.Status)
                 .HasMaxLength(255)
-                .IsUnicode(false)
                 .HasDefaultValue("active")
                 .HasColumnName("status");
 
@@ -504,7 +480,6 @@ public partial class AppDbContext : DbContext
             entity.Property(e => e.RoleId).HasColumnName("role_id");
             entity.Property(e => e.RoleName)
                 .HasMaxLength(255)
-                .IsUnicode(false)
                 .HasColumnName("role_name");
         });
 
@@ -519,7 +494,6 @@ public partial class AppDbContext : DbContext
             entity.Property(e => e.SizeId).HasColumnName("size_id");
             entity.Property(e => e.SizeName)
                 .HasMaxLength(50)
-                .IsUnicode(false)
                 .HasColumnName("size_name");
         });
 
@@ -542,29 +516,23 @@ public partial class AppDbContext : DbContext
                 .HasColumnName("deleted_at");
             entity.Property(e => e.Email)
                 .HasMaxLength(100)
-                .IsUnicode(false)
                 .HasColumnName("email");
             entity.Property(e => e.FullName)
                 .HasMaxLength(255)
-                .IsUnicode(false)
                 .HasColumnName("full_name");
             entity.Property(e => e.PasswordHash)
                 .HasMaxLength(255)
-                .IsUnicode(false)
                 .HasColumnName("password_hash");
             entity.Property(e => e.Phone)
                 .HasMaxLength(255)
-                .IsUnicode(false)
                 .HasColumnName("phone");
             entity.Property(e => e.RoleId).HasColumnName("role_id");
             entity.Property(e => e.Status)
                 .HasMaxLength(255)
-                .IsUnicode(false)
                 .HasDefaultValue("active")
                 .HasColumnName("status");
             entity.Property(e => e.Username)
                 .HasMaxLength(50)
-                .IsUnicode(false)
                 .HasColumnName("username");
 
             entity.HasOne(d => d.Role).WithMany(p => p.Users)

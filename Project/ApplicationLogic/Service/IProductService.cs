@@ -8,8 +8,10 @@ namespace Project.ApplicationLogic.Service
         Task<List<ProductResponse>> GetFeaturedAsync(string? filter, int take = 12, CancellationToken cancellationToken = default);
         Task<ProductDetailResponse> GetByIdAsync(int id);
 
-        Task CreateAsync(ProductRequest request);
+        Task<int> CreateAsync(ProductRequest request);
         Task UpdateAsync(int id, ProductRequest request);
         Task DeleteAsync(int id);
+        Task ToggleStatusAsync(int id);
+        Task<string> AddImageUrlAsync(int productId, string imageUrl);
     }
 }

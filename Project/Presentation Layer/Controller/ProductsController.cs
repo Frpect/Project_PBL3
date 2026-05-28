@@ -59,8 +59,8 @@ namespace Project.PresentationLayer.Controllers
         {
             try
             {
-                await _service.CreateAsync(request);
-                return Ok(new { message = "Product created successfully" });
+                var productId = await _service.CreateAsync(request);
+                return Ok(new { productId, message = "Product created successfully" });
             }
             catch (Exception ex)
             {
@@ -97,6 +97,50 @@ namespace Project.PresentationLayer.Controllers
             catch (Exception ex)
             {
                 return NotFound(new { message = ex.Message });
+            }
+        }
+
+        // GET /api/products/search-suggestions?query=...&take=6
+        [AllowAnonymous]
+        [HttpGet("search-suggestions")]
+        public async Task<IActionResult> SearchSuggestions([FromQuery] string? query, [FromQuery] int take = 6)
+        {
+            var all = await _service.GetAllAsync();
+            var filtered = string.IsNullOrWhiteSpace(query)
+                ? all.Take(take)
+                : all.Where(p => p.ProductName.Contains(query, StringComparison.OrdinalIgnoreCase)).Take(take);
+            return Ok(filtered);
+        }
+
+        // PATCH /api/products/{id}/toggle-status
+        [Authorize(Policy = "StaffOrAdmin")]
+        [HttpPatch("{id}/toggle-status")]
+        public async Task<IActionResult> ToggleStatus(int id)
+        {
+            try
+            {
+                await _service.ToggleStatusAsync(id);
+                return Ok(new { message = "Đã cập nhật trạng thái" });
+            }
+            catch (Exception ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+        }
+
+        // POST /api/products/{productId}/image-url
+        [Authorize(Policy = "StaffOrAdmin")]
+        [HttpPost("{productId}/image-url")]
+        public async Task<IActionResult> AddImageUrl(int productId, [FromBody] AddImageUrlRequest request)
+        {
+            try
+            {
+                var url = await _service.AddImageUrlAsync(productId, request.ImageUrl);
+                return Ok(new { imageUrl = url });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
             }
         }
 

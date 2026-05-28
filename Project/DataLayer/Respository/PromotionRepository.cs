@@ -20,7 +20,10 @@ public class PromotionRepository : IPromotionRepository
 
     public async Task<Promotion?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
-        return await _db.Promotions.FirstOrDefaultAsync(p => p.PromotionId == id, cancellationToken);
+        return await _db.Promotions
+            .Include(p => p.Categories)
+            .Include(p => p.Orders)
+            .FirstOrDefaultAsync(p => p.PromotionId == id, cancellationToken);
     }
 
     public async Task<Promotion?> GetByCodeAsync(string code, CancellationToken cancellationToken = default)

@@ -95,13 +95,8 @@ public class DiscountService : IDiscountService
         if (p == null)
             throw new NotFoundException("Discount not found");
 
-        if (await _promotions.IsReferencedByOrdersAsync(id, cancellationToken))
-        {
-            p.Status = "inactive";
-            _promotions.Update(p);
-            await _promotions.SaveChangesAsync(cancellationToken);
-            return;
-        }
+        foreach (var o in p.Orders) o.PromotionId = null;
+        p.Categories.Clear();
 
         _promotions.Remove(p);
         await _promotions.SaveChangesAsync(cancellationToken);

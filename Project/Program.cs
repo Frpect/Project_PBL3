@@ -12,7 +12,11 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(o =>
+    {
+        o.JsonSerializerOptions.Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping;
+    });
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
@@ -46,7 +50,13 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins("http://localhost:3456", "http://localhost:3000", "http://127.0.0.1:3456")
+        policy.WithOrigins(
+                  "http://localhost:3456", "http://127.0.0.1:3456",
+                  "http://localhost:3000", "http://127.0.0.1:3000",
+                  "http://localhost:5500", "http://127.0.0.1:5500",
+                  "http://localhost:5173", "http://127.0.0.1:5173",
+                  "http://localhost:8080", "http://127.0.0.1:8080"
+              )
               .AllowAnyHeader()
               .AllowAnyMethod();
     });

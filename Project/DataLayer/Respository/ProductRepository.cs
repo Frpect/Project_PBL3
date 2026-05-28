@@ -18,6 +18,13 @@ namespace Project.DataLayer.Respository
         {
             return await _context.Products
                 .Include(p => p.Category)
+                .Include(p => p.ProductImages)
+                .Include(p => p.ProductVariants.Where(v => v.DeletedAt == null))
+                    .ThenInclude(v => v.Size)
+                .Include(p => p.ProductVariants.Where(v => v.DeletedAt == null))
+                    .ThenInclude(v => v.Color)
+                .Include(p => p.ProductVariants.Where(v => v.DeletedAt == null))
+                    .ThenInclude(v => v.Inventories)
                 .Where(p => p.DeletedAt == null)
                 .ToListAsync();
         }
@@ -31,6 +38,11 @@ namespace Project.DataLayer.Respository
                 .Include(p => p.Category)
                 .Include(p => p.ProductImages)
                 .Include(p => p.ProductVariants.Where(v => v.DeletedAt == null))
+                    .ThenInclude(v => v.Size)
+                .Include(p => p.ProductVariants.Where(v => v.DeletedAt == null))
+                    .ThenInclude(v => v.Color)
+                .Include(p => p.ProductVariants.Where(v => v.DeletedAt == null))
+                    .ThenInclude(v => v.Inventories)
                 .Where(p => p.DeletedAt == null);
 
             if (filter is "bestseller" or "bestsellers" or "hot")
@@ -71,8 +83,13 @@ namespace Project.DataLayer.Respository
         {
             return await _context.Products
                 .Include(p => p.Category)
-                .Include(p => p.ProductVariants.Where(v => v.DeletedAt == null))
                 .Include(p => p.ProductImages)
+                .Include(p => p.ProductVariants.Where(v => v.DeletedAt == null))
+                    .ThenInclude(v => v.Size)
+                .Include(p => p.ProductVariants.Where(v => v.DeletedAt == null))
+                    .ThenInclude(v => v.Color)
+                .Include(p => p.ProductVariants.Where(v => v.DeletedAt == null))
+                    .ThenInclude(v => v.Inventories)
                 .FirstOrDefaultAsync(p => p.ProductId == id && p.DeletedAt == null);
         }
 

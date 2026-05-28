@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getCustomers, getOrders, getAddresses, toggleCustomerLock, resetCustomerPassword, deleteAccountApi, ApiCustomer, ApiOrder, ApiAddress, formatAddress } from '../../lib/api';
+import { getCustomers, getOrders, getAddresses, toggleCustomerLock, resetCustomerPassword, deleteAccountApi, updateCustomer, ApiCustomer, ApiOrder, ApiAddress, formatAddress } from '../../lib/api';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
@@ -59,16 +59,21 @@ export function CustomersPage() {
     }
   };
 
-  const handleSaveCustomer = () => {
+  const handleSaveCustomer = async () => {
     if (!editingCustomer) return;
 
     if (!editingCustomer.fullName || !editingCustomer.email || !editingCustomer.phone) {
       toast.error('Vui lòng điền đầy đủ thông tin');
       return;
     }
-    setAllCustomers(prev => prev.map(c => c.customerId === editingCustomer.customerId ? editingCustomer : c));
-    setIsEditing(false);
-    toast.success('Cập nhật thông tin khách hàng thành công');
+    const uid = Number(editingCustomer.userId ?? editingCustomer.customerId);
+    if (!uid) { toast.error('Không tìm thấy ID khách hàng'); return; }
+    try {
+      const updated = await updateCustomer({ userId: uid, fullName: editingCustomer.fullName, email: editingCustomer.email, phone: editingCustomer.phone ?? '' });
+      setAllCustomers(prev => prev.map(c => getCustomerId(c) === getCustomerId(editingCustomer) ? { ...c, ...updated } : c));
+      setIsEditing(false);
+      toast.success('Cập nhật thông tin khách hàng thành công');
+    } catch (e: any) { toast.error(e.message || 'Cập nhật thất bại'); }
   };
 
   const handleDeleteCustomer = async () => {

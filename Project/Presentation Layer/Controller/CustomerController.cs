@@ -48,6 +48,25 @@ namespace Project.PresentationLayer.Controllers
             }
         }
 
+        // PATCH /api/Customer/{id}/toggle-lock (alias)
+        [HttpPatch("{id}/toggle-lock")]
+        public IActionResult ToggleLock(int id) => ToggleStatus(id);
+
+        // POST /api/Customer/{id}/reset-password
+        [HttpPost("{id}/reset-password")]
+        public IActionResult ResetPassword(int id, [FromBody] ResetPasswordRequest request)
+        {
+            try
+            {
+                _service.ResetPassword(id, request.NewPassword);
+                return Ok(new { message = "Đã đặt lại mật khẩu" });
+            }
+            catch (NotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+        }
+
         // GET /api/Customer/search?query=
         [HttpGet("search")]
         public IActionResult Search([FromQuery] string? query)
