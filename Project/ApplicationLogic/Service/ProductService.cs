@@ -1,59 +1,23 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Project.ApplicationLogic.DTOs;
-using Project.DataLayer.Context;
+﻿using Project.ApplicationLogic.DTOs;
 using Project.DataLayer.Models;
 using Project.DataLayer.Respository;
-using System.Threading;
 
 namespace Project.ApplicationLogic.Service
 {
     public class ProductService : IProductService
     {
         private readonly IProductRepository _repo;
-        private readonly AppDbContext _db;
 
-        public ProductService(IProductRepository repo, AppDbContext db)
-        {       
+        public ProductService(IProductRepository repo)
+        {
             _repo = repo;
-            _db = db;
         }
 
         // 🔹 Lấy danh sách product (gọn)
         public async Task<List<ProductResponse>> GetAllAsync()
         {
             var products = await _repo.GetAllAsync();
-
-            return products.Select(p =>
-            {
-                var firstVariant = p.ProductVariants.FirstOrDefault();
-                var imageUrl = p.ProductImages.FirstOrDefault()?.ImageUrl;
-                var totalStock = p.ProductVariants
-                    .SelectMany(v => v.Inventories)
-                    .Sum(i => i.Quantity ?? 0);
-
-                return new ProductResponse
-                {
-                    ProductId = p.ProductId,
-                    ProductName = p.ProductName,
-                    CategoryName = p.Category?.CategoryName,
-                    Thumbnail = imageUrl,
-                    ImageUrl = imageUrl,
-                    Sku = firstVariant?.Sku,
-                    Price = firstVariant?.Price ?? 0,
-                    BasePrice = firstVariant?.Price ?? 0,
-                    TotalStock = totalStock,
-                    IsActive = p.Status == "active" || p.Status == null,
-                    Variants = p.ProductVariants.Select(v => new ProductVariantDto
-                    {
-                        VariantId = v.VariantId,
-                        Sku = v.Sku,
-                        Size = v.Size?.SizeName ?? string.Empty,
-                        Color = v.Color?.ColorName ?? string.Empty,
-                        Price = v.Price ?? 0,
-                        Stock = v.Inventories.Sum(i => i.Quantity ?? 0)
-                    }).ToList()
-                };
-            }).ToList();
+            return products.Select(MapToProductResponse).ToList();
         }
 
         // 🔹 Lấy chi tiết product
@@ -81,30 +45,10 @@ namespace Project.ApplicationLogic.Service
                 IsActive = p.Status == "active" || p.Status == null,
                 ImageUrl = imageUrl,
                 TotalStock = totalStock,
-
                 Images = p.ProductImages.Select(i => i.ImageUrl).OfType<string>().ToList(),
-
-                Sizes = p.ProductVariants
-                    .Select(v => v.Size?.SizeName)
-                    .OfType<string>()
-                    .Distinct()
-                    .ToList(),
-
-                Colors = p.ProductVariants
-                    .Select(v => v.Color?.ColorName)
-                    .OfType<string>()
-                    .Distinct()
-                    .ToList(),
-
-                Variants = p.ProductVariants.Select(v => new ProductVariantDto
-                {
-                    VariantId = v.VariantId,
-                    Sku = v.Sku,
-                    Size = v.Size?.SizeName ?? string.Empty,
-                    Color = v.Color?.ColorName ?? string.Empty,
-                    Price = v.Price ?? 0,
-                    Stock = v.Inventories?.Sum(i => i.Quantity) ?? 0
-                }).ToList()
+                Sizes = p.ProductVariants.Select(v => v.Size?.SizeName).OfType<string>().Distinct().ToList(),
+                Colors = p.ProductVariants.Select(v => v.Color?.ColorName).OfType<string>().Distinct().ToList(),
+                Variants = p.ProductVariants.Select(MapToVariantDto).ToList()
             };
         }
 
@@ -178,24 +122,8 @@ namespace Project.ApplicationLogic.Service
         {
             foreach (var vr in variants)
             {
-                var sizeName = vr.Size?.Trim();
-                var colorName = vr.Color?.Trim();
-
-                var size = await _db.Sizes.FirstOrDefaultAsync(s => s.SizeName == sizeName);
-                if (size == null)
-                {
-                    size = new Size { SizeName = sizeName };
-                    _db.Sizes.Add(size);
-                    await _db.SaveChangesAsync();
-                }
-
-                var color = await _db.Colors.FirstOrDefaultAsync(c => c.ColorName == colorName);
-                if (color == null)
-                {
-                    color = new Color { ColorName = colorName };
-                    _db.Colors.Add(color);
-                    await _db.SaveChangesAsync();
-                }
+                var size = await _repo.GetOrCreateSizeAsync(vr.Size);
+                var color = await _repo.GetOrCreateColorAsync(vr.Color);
 
                 var variant = new ProductVariant
                 {
@@ -206,16 +134,16 @@ namespace Project.ApplicationLogic.Service
                     Sku = vr.Sku,
                     CreatedAt = DateTime.Now
                 };
-                _db.ProductVariants.Add(variant);
-                await _db.SaveChangesAsync();
+                await _repo.AddVariantAsync(variant);
+                await _repo.SaveChangesAsync();
 
-                _db.Inventories.Add(new Inventory
+                await _repo.AddInventoryAsync(new Inventory
                 {
                     VariantId = variant.VariantId,
                     Quantity = vr.Stock,
                     LastUpdated = DateTime.Now
                 });
-                await _db.SaveChangesAsync();
+                await _repo.SaveChangesAsync();
             }
         }
 
@@ -250,38 +178,41 @@ namespace Project.ApplicationLogic.Service
         public async Task<List<ProductResponse>> GetFeaturedAsync(string? filter, int take = 12, CancellationToken cancellationToken = default)
         {
             var products = await _repo.GetFeaturedAsync(filter ?? string.Empty, take, cancellationToken);
-
-            return products.Select(p =>
-            {
-                var firstVariant = p.ProductVariants.FirstOrDefault();
-                var imageUrl = p.ProductImages.FirstOrDefault()?.ImageUrl;
-                var totalStock = p.ProductVariants
-                    .SelectMany(v => v.Inventories)
-                    .Sum(i => i.Quantity ?? 0);
-
-                return new ProductResponse
-                {
-                    ProductId = p.ProductId,
-                    ProductName = p.ProductName,
-                    CategoryName = p.Category?.CategoryName,
-                    Thumbnail = imageUrl,
-                    ImageUrl = imageUrl,
-                    Sku = firstVariant?.Sku,
-                    Price = firstVariant?.Price ?? 0,
-                    BasePrice = firstVariant?.Price ?? 0,
-                    TotalStock = totalStock,
-                    IsActive = p.Status == "active" || p.Status == null,
-                    Variants = p.ProductVariants.Select(v => new ProductVariantDto
-                    {
-                        VariantId = v.VariantId,
-                        Sku = v.Sku,
-                        Size = v.Size?.SizeName ?? string.Empty,
-                        Color = v.Color?.ColorName ?? string.Empty,
-                        Price = v.Price ?? 0,
-                        Stock = v.Inventories.Sum(i => i.Quantity ?? 0)
-                    }).ToList()
-                };
-            }).ToList();
+            return products.Select(MapToProductResponse).ToList();
         }
+
+        // 🔹 Helper: map Product -> ProductResponse
+        private static ProductResponse MapToProductResponse(Product p)
+        {
+            var firstVariant = p.ProductVariants.FirstOrDefault();
+            var imageUrl = p.ProductImages.FirstOrDefault()?.ImageUrl;
+            var totalStock = p.ProductVariants.SelectMany(v => v.Inventories).Sum(i => i.Quantity ?? 0);
+
+            return new ProductResponse
+            {
+                ProductId = p.ProductId,
+                ProductName = p.ProductName,
+                CategoryName = p.Category?.CategoryName,
+                Thumbnail = imageUrl,
+                ImageUrl = imageUrl,
+                Sku = firstVariant?.Sku,
+                Price = firstVariant?.Price ?? 0,
+                BasePrice = firstVariant?.Price ?? 0,
+                TotalStock = totalStock,
+                IsActive = p.Status == "active" || p.Status == null,
+                Variants = p.ProductVariants.Select(MapToVariantDto).ToList()
+            };
+        }
+
+        // 🔹 Helper: map ProductVariant -> ProductVariantDto
+        private static ProductVariantDto MapToVariantDto(ProductVariant v) => new()
+        {
+            VariantId = v.VariantId,
+            Sku = v.Sku,
+            Size = v.Size?.SizeName ?? string.Empty,
+            Color = v.Color?.ColorName ?? string.Empty,
+            Price = v.Price ?? 0,
+            Stock = v.Inventories?.Sum(i => i.Quantity ?? 0) ?? 0
+        };
     }
 }

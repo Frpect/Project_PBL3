@@ -18,19 +18,7 @@ namespace Project.ApplicationLogic.Service
         public async Task<List<StaffResponse>> GetAllAsync()
         {
             var staff = await _repo.GetAllStaffAsync();
-
-            return staff.Select(u => new StaffResponse
-            {
-                UserId = u.UserId,
-                StaffId = u.UserId,
-                Username = u.Username,
-                FullName = u.FullName ?? string.Empty,
-                Email = u.Email,
-                Phone = u.Phone,
-                Status = u.Status ?? "active",
-                CreatedAt = u.CreatedAt,
-                Role = u.Role?.RoleName ?? string.Empty
-            }).ToList();
+            return staff.Select(MapToStaffResponse).ToList();
         }
 
         public async Task<StaffResponse> GetByIdAsync(int id)
@@ -38,19 +26,7 @@ namespace Project.ApplicationLogic.Service
             var user = await _repo.GetByIdAsync(id);
             if (user == null)
                 throw new Exception("Staff not found");
-
-            return new StaffResponse
-            {
-                UserId = user.UserId,
-                StaffId = user.UserId,
-                Username = user.Username,
-                FullName = user.FullName ?? string.Empty,
-                Email = user.Email,
-                Phone = user.Phone,
-                Status = user.Status ?? "active",
-                CreatedAt = user.CreatedAt,
-                Role = user.Role?.RoleName ?? string.Empty
-            };
+            return MapToStaffResponse(user);
         }
 
         public async Task<StaffResponse> CreateAsync(CreateStaffRequest request)
@@ -90,19 +66,7 @@ namespace Project.ApplicationLogic.Service
 
             // Reload with Role
             var created = await _repo.GetByIdAsync(user.UserId);
-
-            return new StaffResponse
-            {
-                UserId = created!.UserId,
-                StaffId = created.UserId,
-                Username = created.Username,
-                FullName = created.FullName ?? string.Empty,
-                Email = created.Email,
-                Phone = created.Phone,
-                Status = created.Status ?? "active",
-                CreatedAt = created.CreatedAt,
-                Role = created.Role?.RoleName ?? string.Empty
-            };
+            return MapToStaffResponse(created!);
         }
 
         public async Task<StaffResponse> UpdateAsync(int id, UpdateStaffRequest request)
@@ -122,19 +86,7 @@ namespace Project.ApplicationLogic.Service
 
             _repo.Update(user);
             await _repo.SaveChangesAsync();
-
-            return new StaffResponse
-            {
-                UserId = user.UserId,
-                StaffId = user.UserId,
-                Username = user.Username,
-                FullName = user.FullName ?? string.Empty,
-                Email = user.Email,
-                Phone = user.Phone,
-                Status = user.Status ?? "active",
-                CreatedAt = user.CreatedAt,
-                Role = user.Role?.RoleName ?? string.Empty
-            };
+            return MapToStaffResponse(user);
         }
 
         public async Task<StaffResponse> ToggleLockAsync(int id)
@@ -143,24 +95,10 @@ namespace Project.ApplicationLogic.Service
             if (user == null)
                 throw new Exception("Staff not found");
 
-            // Toggle status: active -> locked, locked -> active
             user.Status = user.Status == "active" ? "locked" : "active";
-
             _repo.Update(user);
             await _repo.SaveChangesAsync();
-
-            return new StaffResponse
-            {
-                UserId = user.UserId,
-                StaffId = user.UserId,
-                Username = user.Username,
-                FullName = user.FullName ?? string.Empty,
-                Email = user.Email,
-                Phone = user.Phone,
-                Status = user.Status,
-                CreatedAt = user.CreatedAt,
-                Role = user.Role?.RoleName ?? string.Empty
-            };
+            return MapToStaffResponse(user);
         }
 
         public async Task ResetPasswordAsync(int id, string newPassword)
@@ -184,6 +122,19 @@ namespace Project.ApplicationLogic.Service
             _repo.Delete(user);
             await _repo.SaveChangesAsync();
         }
+
+        private static StaffResponse MapToStaffResponse(User u) => new()
+        {
+            UserId = u.UserId,
+            StaffId = u.UserId,
+            Username = u.Username,
+            FullName = u.FullName ?? string.Empty,
+            Email = u.Email,
+            Phone = u.Phone,
+            Status = u.Status ?? "active",
+            CreatedAt = u.CreatedAt,
+            Role = u.Role?.RoleName ?? string.Empty
+        };
 
         private string HashPassword(string password)
         {

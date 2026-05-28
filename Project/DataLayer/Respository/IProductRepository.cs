@@ -14,6 +14,11 @@ namespace Project.DataLayer.Respository
 
         Task<bool> CategoryExistsAsync(int categoryId);
 
+        Task<Size> GetOrCreateSizeAsync(string? sizeName);
+        Task<Color> GetOrCreateColorAsync(string? colorName);
+        Task AddVariantAsync(ProductVariant variant);
+        Task AddInventoryAsync(Inventory inventory);
+
         Task SaveChangesAsync();
     }
 }

@@ -119,6 +119,46 @@ namespace Project.DataLayer.Respository
                 .AnyAsync(c => c.CategoryId == categoryId);
         }
 
+        // 🔹 Lấy hoặc tạo Size
+        public async Task<Size> GetOrCreateSizeAsync(string? sizeName)
+        {
+            var name = sizeName?.Trim();
+            var size = await _context.Sizes.FirstOrDefaultAsync(s => s.SizeName == name);
+            if (size == null)
+            {
+                size = new Size { SizeName = name };
+                _context.Sizes.Add(size);
+                await _context.SaveChangesAsync();
+            }
+            return size;
+        }
+
+        // 🔹 Lấy hoặc tạo Color
+        public async Task<Color> GetOrCreateColorAsync(string? colorName)
+        {
+            var name = colorName?.Trim();
+            var color = await _context.Colors.FirstOrDefaultAsync(c => c.ColorName == name);
+            if (color == null)
+            {
+                color = new Color { ColorName = name };
+                _context.Colors.Add(color);
+                await _context.SaveChangesAsync();
+            }
+            return color;
+        }
+
+        // 🔹 Thêm ProductVariant
+        public async Task AddVariantAsync(ProductVariant variant)
+        {
+            await _context.ProductVariants.AddAsync(variant);
+        }
+
+        // 🔹 Thêm Inventory
+        public async Task AddInventoryAsync(Inventory inventory)
+        {
+            await _context.Inventories.AddAsync(inventory);
+        }
+
         // 🔹 Lưu thay đổi xuống DB
         public async Task SaveChangesAsync()
         {

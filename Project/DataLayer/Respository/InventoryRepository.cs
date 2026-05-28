@@ -25,7 +25,7 @@ namespace Project.DataLayer.Respository
                 .Where(i => i.Variant != null && i.Variant.DeletedAt == null
                     && i.Variant.Product != null && i.Variant.Product.DeletedAt == null)
                 .AsQueryable();
-
+            //Loc soft dellete
             if (!string.IsNullOrWhiteSpace(query))
             {
                 q = q.Where(i =>
