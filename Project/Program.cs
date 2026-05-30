@@ -5,7 +5,7 @@ using Microsoft.IdentityModel.Tokens;
 using Project.ApplicationLogic.DTOs;
 using Project.ApplicationLogic.Service;
 using Project.DataLayer.Context;
-using Project.DataLayer.Respository;
+using Project.DataLayer.Repository;
 
 
 var builder = WebApplication.CreateBuilder(args);

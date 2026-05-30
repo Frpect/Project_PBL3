@@ -18,8 +18,5 @@
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.15" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="DataLayer\Models\" />
-  </ItemGroup>
 
 </Project>

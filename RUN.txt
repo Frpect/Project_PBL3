@@ -1,20 +1,6 @@
-cd "e:\dev2026\Project_PBL3\Project"
+cd e:\dev2026\Project_PBL3_2\Project
 dotnet run
 
-cd "e:\dev2026\Project\Project"
-dotnet run
-
-
-
-cd "e:\dev2026\Project_PBL3\Project\Presentation Layer\UIFIGMA"
-pnpm install  //Chạy 1 lần
+cd "e:\dev2026\Project_PBL3_2\FrontEnd"
 pnpm dev
-
-cd "e:\dev2026\Project\Project\Presentation Layer\UIFIGMA"
-
-pnpm dev
-
-quản lý sản phẩm - ProductController
-danh mục - CategoryController
-đơn hàng-OrderController
-kho hàng-InventoryController
+pnpm install  
