@@ -5,7 +5,7 @@ import { useAuth } from '../../lib/auth';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Area, AreaChart } from 'recharts';
-import { DollarSign, ShoppingCart, Package, TrendingUp, Download, AlertTriangle, ArrowUpRight, ArrowDownRight, Users, Eye } from 'lucide-react';
+import { DollarSign, ShoppingCart, Package, TrendingUp, AlertTriangle, ArrowUpRight, ArrowDownRight, Users, Eye } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { toast } from 'sonner';
 import { StatusBadge } from '../../components/StatusBadge';
@@ -153,10 +153,6 @@ export function AnalyticsPage() {
       return acc;
     }, {});
   const topProductsData = Object.values(topProducts).sort((a, b) => b.sold - a.sold).slice(0, 5);
-
-  const handleExport = (format: 'pdf' | 'excel') => {
-    toast.success(`Đang xuất báo cáo ${format.toUpperCase()}...`);
-  };
 
   const prevPeriodLabel = timeRange === 'day' ? 'hôm qua' : timeRange === 'week' ? 'tuần trước' : timeRange === 'year' ? 'năm trước' : 'tháng trước';
 
@@ -341,9 +337,6 @@ export function AnalyticsPage() {
               <SelectItem value="year">Năm nay</SelectItem>
             </SelectContent>
           </Select>
-          <Button variant="outline" size="icon" onClick={() => handleExport('pdf')}>
-            <Download className="h-4 w-4" />
-          </Button>
         </div>
       </div>
 

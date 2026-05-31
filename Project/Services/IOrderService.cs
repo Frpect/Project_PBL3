@@ -10,6 +10,6 @@ namespace Project.ApplicationLogic.Service
         Task<List<OrderResponse>> GetAllOrdersAsync();
         Task UpdateOrderStatusAsync(int orderId, string status);
         Task<List<OrderListItemDto>> GetRecentSummariesAsync(int limit, CancellationToken cancellationToken = default);
-        Task CancelOrderAsync(int orderId);
+        Task CancelOrderAsync(int orderId, int userId);
     }
 }

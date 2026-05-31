@@ -282,6 +282,7 @@ export function CheckoutPage() {
                       </div>
                     </label>
 
+                    {/* Tạm ẩn thanh toán online
                     <label 
                       htmlFor="online" 
                       className={`flex items-center gap-4 p-4 border rounded-xl cursor-pointer transition-all ${
@@ -299,6 +300,7 @@ export function CheckoutPage() {
                         </p>
                       </div>
                     </label>
+                    */}
                   </div>
                 </RadioGroup>
               </div>

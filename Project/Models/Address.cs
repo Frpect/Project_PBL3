@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace Project.DataLayer.Models;
@@ -24,6 +24,8 @@ public partial class Address
     public string? AddressType { get; set; }
 
     public bool? IsDefault { get; set; }
+
+    public DateTime? DeletedAt { get; set; }
 
     public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
 

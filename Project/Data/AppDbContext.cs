@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Project.DataLayer.Models;
@@ -95,6 +95,9 @@ public partial class AppDbContext : DbContext
             entity.Property(e => e.Ward)
                 .HasMaxLength(200)
                 .HasColumnName("ward");
+            entity.Property(e => e.DeletedAt)
+                .HasColumnType("datetime")
+                .HasColumnName("deleted_at");
 
             entity.HasOne(d => d.User).WithMany(p => p.Addresses)
                 .HasForeignKey(d => d.UserId)

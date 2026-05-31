@@ -392,6 +392,14 @@ export async function updateOrderStatus(id: string, status: string): Promise<voi
   if (!res.ok) throw new Error('Cập nhật trạng thái thất bại');
 }
 
+export async function cancelOrder(id: string): Promise<void> {
+  const res = await apiFetch(`/api/order/${id}/cancel`, { method: 'PUT' });
+  if (!res.ok) {
+    const e = await res.json().catch(() => ({}));
+    throw new Error((e as any).message || 'Hủy đơn hàng thất bại');
+  }
+}
+
 // ─── Customers ────────────────────────────────────────────────────────────────
 export interface ApiCustomer {
   customerId?: string;

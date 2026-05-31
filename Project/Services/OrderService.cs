@@ -162,12 +162,15 @@ namespace Project.ApplicationLogic.Service
         }
 
         // 🔹 Hủy đơn hàng (chỉ cho phép khi đang ở trạng thái pending)
-        public async Task CancelOrderAsync(int orderId)
+        public async Task CancelOrderAsync(int orderId, int userId)
         {
             var order = await _orderRepo.GetByIdAsync(orderId);
 
             if (order == null)
                 throw new NotFoundException("Order not found");
+
+            if (order.UserId != userId)
+                throw new UnauthorizedAccessException("Bạn không có quyền hủy đơn hàng này");
 
             if (order.OrderStatus != "pending")
                 throw new Exception("Only pending orders can be cancelled");
@@ -186,15 +189,25 @@ namespace Project.ApplicationLogic.Service
                 Size = od.Variant?.Size?.SizeName ?? string.Empty,
                 Color = od.Variant?.Color?.ColorName ?? string.Empty,
                 Price = od.Price ?? 0,
-                Quantity = od.Quantity ?? 0
+                Quantity = od.Quantity ?? 0,
+                Image = od.Variant?.Product?.ProductImages?.FirstOrDefault(pi => pi.IsPrimary == true)?.ImageUrl 
+                        ?? od.Variant?.Product?.ProductImages?.FirstOrDefault()?.ImageUrl 
+                        ?? string.Empty
             }).ToList();
 
             var status = order.OrderStatus ?? "pending";
             var total = order.TotalAmount ?? 0;
             var discount = order.DiscountAmount ?? 0;
             var orderDate = order.OrderDate ?? DateTime.Now;
-            var customerName = order.User?.FullName ?? order.User?.Username ?? string.Empty;
-            var customerPhone = order.User?.Phone ?? string.Empty;
+            
+            // Lấy thông tin người nhận từ ShippingAddress nếu có, fallback sang User
+            var customerName = order.ShippingAddress?.RecipientName 
+                               ?? order.User?.FullName 
+                               ?? order.User?.Username 
+                               ?? string.Empty;
+            var customerPhone = order.ShippingAddress?.Phone 
+                                ?? order.User?.Phone 
+                                ?? string.Empty;
 
             return new OrderResponse
             {

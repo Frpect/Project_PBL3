@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
+using System.IdentityModel.Tokens.Jwt;
 using Project.ApplicationLogic.DTOs;
 using Project.ApplicationLogic.Service;
 using Project.ExceptionHandling;
@@ -128,12 +130,25 @@ namespace Project.PresentationLayer.Controllers
         {
             try
             {
-                await _service.CancelOrderAsync(id);
+                // Thử lấy userId từ NameIdentifier (mặc định của .NET) hoặc sub claim
+                var sub = User.FindFirst(ClaimTypes.NameIdentifier)?.Value 
+                          ?? User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+                
+                if (string.IsNullOrEmpty(sub) || !int.TryParse(sub, out var userId))
+                {
+                    return Unauthorized(new { message = "Không thể xác định danh tính người dùng" });
+                }
+
+                await _service.CancelOrderAsync(id, userId);
                 return Ok(new { message = "Order cancelled" });
             }
             catch (NotFoundException ex)
             {
                 return NotFound(new { message = ex.Message });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = ex.Message });
             }
             catch (Exception ex)
             {

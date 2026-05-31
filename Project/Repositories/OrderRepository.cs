@@ -24,9 +24,11 @@ namespace Project.DataLayer.Repository
         {
             return await _context.Orders
                 .Include(o => o.User)
+                .Include(o => o.ShippingAddress)
                 .Include(o => o.OrderDetails)
                     .ThenInclude(od => od.Variant)
                         .ThenInclude(v => v!.Product)
+                            .ThenInclude(p => p!.ProductImages)
                 .Include(o => o.OrderDetails)
                     .ThenInclude(od => od.Variant)
                         .ThenInclude(v => v!.Size)
@@ -40,9 +42,11 @@ namespace Project.DataLayer.Repository
         public async Task<List<Order>> GetAllOrdersAsync()
         {
             return await _context.Orders
+                .Include(o => o.ShippingAddress)
                 .Include(o => o.OrderDetails)
                     .ThenInclude(od => od.Variant)
                         .ThenInclude(v => v!.Product)
+                            .ThenInclude(p => p!.ProductImages)
                 .Include(o => o.User)
                 .OrderByDescending(o => o.OrderDate)
                 .ToListAsync();
@@ -53,9 +57,11 @@ namespace Project.DataLayer.Repository
         {
             return await _context.Orders
                 .Include(o => o.User)
+                .Include(o => o.ShippingAddress)
                 .Include(o => o.OrderDetails)
                     .ThenInclude(od => od.Variant)
                         .ThenInclude(v => v!.Product)
+                            .ThenInclude(p => p!.ProductImages)
                 .Include(o => o.OrderDetails)
                     .ThenInclude(od => od.Variant)
                         .ThenInclude(v => v!.Size)
@@ -81,9 +87,11 @@ namespace Project.DataLayer.Repository
         {
             return await _context.Orders
                 .AsNoTracking()
+                .Include(o => o.ShippingAddress)
                 .Include(o => o.OrderDetails)
                     .ThenInclude(od => od.Variant)
                         .ThenInclude(v => v!.Product)
+                            .ThenInclude(p => p!.ProductImages)
                 .OrderByDescending(o => o.OrderDate)
                 .Take(take)
                 .ToListAsync(cancellationToken);

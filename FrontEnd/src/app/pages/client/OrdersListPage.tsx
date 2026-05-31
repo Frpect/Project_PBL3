@@ -2,14 +2,16 @@ import { Link, Navigate } from 'react-router';
 import { ShoppingBag } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { StatusBadge } from '../../components/StatusBadge';
-import { getOrders, ApiOrder } from '../../lib/api';
+import { cancelOrder, getOrders, ApiOrder } from '../../lib/api';
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../lib/auth';
+import { toast } from 'sonner';
 
 export function OrdersListPage() {
   const { user, isAuthenticated } = useAuth();
   const [orders, setOrders] = useState<ApiOrder[]>([]);
   const [loading, setLoading] = useState(true);
+  const [cancellingOrderId, setCancellingOrderId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -81,9 +83,33 @@ export function OrdersListPage() {
                   <p className="text-lg font-semibold text-foreground">
                     Tổng: {(order.totalAmount || order.total || 0).toLocaleString('vi-VN')}đ
                   </p>
-                  <Link to={`/orders/${order.orderId}`}>
-                    <Button variant="outline" className="rounded-lg">Xem chi tiết</Button>
-                  </Link>
+                  <div className="flex items-center gap-2">
+                    {((order.orderStatus || order.status || '').toLowerCase() === 'pending') && (
+                      <Button
+                        variant="destructive"
+                        className="rounded-lg"
+                        disabled={cancellingOrderId === order.orderId}
+                        onClick={async () => {
+                          if (!confirm('Bạn muốn hủy đơn hàng này?')) return;
+                          setCancellingOrderId(order.orderId);
+                          try {
+                            await cancelOrder(order.orderId);
+                            setOrders(prev => prev.map(o => o.orderId === order.orderId ? { ...o, orderStatus: 'cancelled', status: 'cancelled' } : o));
+                            toast.success('Đã hủy đơn hàng');
+                          } catch (e: any) {
+                            toast.error(e.message || 'Hủy đơn hàng thất bại');
+                          } finally {
+                            setCancellingOrderId(null);
+                          }
+                        }}
+                      >
+                        {cancellingOrderId === order.orderId ? 'Đang hủy...' : 'Hủy'}
+                      </Button>
+                    )}
+                    <Link to={`/orders/${order.orderId}`}>
+                      <Button variant="outline" className="rounded-lg">Xem chi tiết</Button>
+                    </Link>
+                  </div>
                 </div>
               </div>
             ))}

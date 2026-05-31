@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Project.ApplicationLogic.Service;
 using Project.ApplicationLogic.DTOs;
@@ -144,37 +144,49 @@ namespace Project.Presentation_Layer.Controller
         [HttpPost("{userId}/addresses")]
         public IActionResult CreateAddress(int userId, [FromBody] AddressUpsertRequest request)
         {
-            var user = _userRepo.GetById(userId);
-            if (user == null) return NotFound(new { message = "User not found" });
-
-            var address = new Address
+            try
             {
-                UserId = userId,
-                RecipientName = request.RecipientName,
-                Phone = request.Phone,
-                Province = request.Province,
-                District = request.District,
-                Ward = request.Ward,
-                StreetAddress = request.StreetAddress,
-                AddressType = request.AddressType,
-                IsDefault = request.IsDefault
-            };
+                var user = _userRepo.GetById(userId);
+                if (user == null) return NotFound(new { message = "User not found" });
 
-            _userRepo.AddAddress(address);
-            _userRepo.Save();
+                var address = new Address
+                {
+                    UserId = userId,
+                    RecipientName = request.RecipientName,
+                    Phone = request.Phone,
+                    Province = request.Province,
+                    District = request.District,
+                    Ward = request.Ward,
+                    StreetAddress = request.StreetAddress,
+                    AddressType = request.AddressType,
+                    IsDefault = request.IsDefault,
+                    DeletedAt = null // Đảm bảo DeletedAt là null khi tạo mới
+                };
 
-            return Ok(new
+                _userRepo.AddAddress(address);
+                _userRepo.Save();
+
+                return Ok(new
+                {
+                    addressId = address.AddressId,
+                    recipientName = address.RecipientName,
+                    phone = address.Phone,
+                    province = address.Province,
+                    district = address.District,
+                    ward = address.Ward,
+                    streetAddress = address.StreetAddress,
+                    addressType = address.AddressType,
+                    isDefault = address.IsDefault
+                });
+            }
+            catch (Exception ex)
             {
-                addressId = address.AddressId,
-                recipientName = address.RecipientName,
-                phone = address.Phone,
-                province = address.Province,
-                district = address.District,
-                ward = address.Ward,
-                streetAddress = address.StreetAddress,
-                addressType = address.AddressType,
-                isDefault = address.IsDefault
-            });
+                // Log lỗi chi tiết ra console để debug nếu cần
+                Console.WriteLine($"Error creating address: {ex.Message}");
+                if (ex.InnerException != null) Console.WriteLine($"Inner Exception: {ex.InnerException.Message}");
+                
+                return BadRequest(new { message = "Thêm địa chỉ thất bại: " + ex.Message });
+            }
         }
 
         // DELETE /user/{userId}/addresses/{addressId}

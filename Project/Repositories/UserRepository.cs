@@ -1,4 +1,4 @@
-﻿using Microsoft.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Project.DataLayer.Context;
 using Project.DataLayer.Models;
@@ -37,7 +37,7 @@ namespace Project.DataLayer.Repository
         public User? GetByIdWithAddresses(int userId)
         {
             return _context.Users
-                .Include(u => u.Addresses)
+                .Include(u => u.Addresses.Where(a => a.DeletedAt == null))
                 .FirstOrDefault(u => u.DeletedAt == null && u.UserId == userId);
         }
 
@@ -87,7 +87,7 @@ namespace Project.DataLayer.Repository
 
         public Address? GetAddressForUser(int addressId, int userId)
         {
-            return _context.Addresses.FirstOrDefault(a => a.AddressId == addressId && a.UserId == userId);
+            return _context.Addresses.FirstOrDefault(a => a.DeletedAt == null && a.AddressId == addressId && a.UserId == userId);
         }
 
         public void AddAddress(Address address)
@@ -97,7 +97,7 @@ namespace Project.DataLayer.Repository
 
         public void RemoveAddress(Address address)
         {
-            _context.Addresses.Remove(address);
+            address.DeletedAt = DateTime.Now;
         }
     }
 }

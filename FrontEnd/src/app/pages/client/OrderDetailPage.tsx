@@ -2,13 +2,15 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router';
 import { Button } from '../../components/ui/button';
 import { StatusBadge } from '../../components/StatusBadge';
-import { getOrderById, ApiOrder } from '../../lib/api';
+import { cancelOrder, getOrderById, ApiOrder } from '../../lib/api';
 import { CheckCircle2, ArrowLeft } from 'lucide-react';
+import { toast } from 'sonner';
 
 export function OrderDetailPage() {
   const { orderId } = useParams();
   const [order, setOrder] = useState<ApiOrder | null>(null);
   const [loading, setLoading] = useState(true);
+  const [cancelling, setCancelling] = useState(false);
 
   useEffect(() => {
     if (!orderId) return;
@@ -39,8 +41,9 @@ export function OrderDetailPage() {
     );
   }
 
+  const orderStatus = (order.orderStatus ?? order.status ?? '').toLowerCase();
   const statusSteps = ['pending', 'confirmed', 'shipping', 'completed'];
-  const currentStepIndex = statusSteps.indexOf(order.orderStatus ?? order.status ?? '');
+  const currentStepIndex = Math.max(0, statusSteps.indexOf(orderStatus));
 
   return (
     <div className="min-h-screen bg-background">
@@ -55,42 +58,51 @@ export function OrderDetailPage() {
         </div>
 
         {/* Status Timeline */}
-        <div className="bg-card rounded-2xl border border-border p-6 mb-6">
-          <h2 className="font-semibold text-foreground mb-8">Trạng thái đơn hàng</h2>
-          <div className="flex items-center justify-between relative">
-            {/* Progress line */}
-            <div className="absolute top-5 left-0 right-0 h-0.5 bg-border" />
-            <div 
-              className="absolute top-5 left-0 h-0.5 bg-emerald-500 transition-all"
-              style={{ width: `${(currentStepIndex / (statusSteps.length - 1)) * 100}%` }}
-            />
-            
-            {statusSteps.map((step, index) => {
-              const isCompleted = index <= currentStepIndex;
-              const labels = {
-                pending: 'Đã đặt',
-                confirmed: 'Đã xác nhận',
-                shipping: 'Đang giao',
-                completed: 'Hoàn thành',
-              };
-
-              return (
-                <div key={step} className="flex flex-col items-center relative z-10">
-                  <div
-                    className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
-                      isCompleted ? 'bg-emerald-500 text-white' : 'bg-muted text-muted-foreground'
-                    }`}
-                  >
-                    {isCompleted ? <CheckCircle2 className="h-5 w-5" /> : <span className="text-sm font-medium">{index + 1}</span>}
-                  </div>
-                  <p className={`text-xs mt-3 font-medium ${isCompleted ? 'text-foreground' : 'text-muted-foreground'}`}>
-                    {labels[step as keyof typeof labels]}
-                  </p>
-                </div>
-              );
-            })}
+        {orderStatus === 'cancelled' ? (
+          <div className="bg-card rounded-2xl border border-border p-6 mb-6">
+            <h2 className="font-semibold text-foreground mb-4">Trạng thái đơn hàng</h2>
+            <div className="flex items-center justify-between gap-3">
+              <StatusBadge status="cancelled" type="order" />
+              <p className="text-sm text-muted-foreground">Đơn hàng đã được hủy</p>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="bg-card rounded-2xl border border-border p-6 mb-6">
+            <h2 className="font-semibold text-foreground mb-8">Trạng thái đơn hàng</h2>
+            <div className="flex items-center justify-between relative">
+              <div className="absolute top-5 left-0 right-0 h-0.5 bg-border" />
+              <div
+                className="absolute top-5 left-0 h-0.5 bg-emerald-500 transition-all"
+                style={{ width: `${(currentStepIndex / (statusSteps.length - 1)) * 100}%` }}
+              />
+
+              {statusSteps.map((step, index) => {
+                const isCompleted = index <= currentStepIndex;
+                const labels = {
+                  pending: 'Đã đặt',
+                  confirmed: 'Đã xác nhận',
+                  shipping: 'Đang giao',
+                  completed: 'Hoàn thành',
+                };
+
+                return (
+                  <div key={step} className="flex flex-col items-center relative z-10">
+                    <div
+                      className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
+                        isCompleted ? 'bg-emerald-500 text-white' : 'bg-muted text-muted-foreground'
+                      }`}
+                    >
+                      {isCompleted ? <CheckCircle2 className="h-5 w-5" /> : <span className="text-sm font-medium">{index + 1}</span>}
+                    </div>
+                    <p className={`text-xs mt-3 font-medium ${isCompleted ? 'text-foreground' : 'text-muted-foreground'}`}>
+                      {labels[step as keyof typeof labels]}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Order Info */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
@@ -109,7 +121,35 @@ export function OrderDetailPage() {
                 <span className="text-muted-foreground">Thanh toán:</span>
                 <StatusBadge status={(order.paymentStatus ?? 'unpaid') as 'paid' | 'unpaid'} type="payment" />
               </div>
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">Trạng thái:</span>
+                <StatusBadge status={(order.orderStatus ?? order.status ?? 'pending') as any} type="order" />
+              </div>
             </div>
+            {orderStatus === 'pending' && (
+              <div className="pt-4 mt-4 border-t border-border flex justify-end">
+                <Button
+                  variant="destructive"
+                  className="rounded-lg"
+                  disabled={cancelling}
+                  onClick={async () => {
+                    if (!confirm('Bạn muốn hủy đơn hàng này?')) return;
+                    setCancelling(true);
+                    try {
+                      await cancelOrder(order.orderId);
+                      setOrder(prev => prev ? { ...prev, orderStatus: 'cancelled', status: 'cancelled' } : prev);
+                      toast.success('Đã hủy đơn hàng');
+                    } catch (e: any) {
+                      toast.error(e.message || 'Hủy đơn hàng thất bại');
+                    } finally {
+                      setCancelling(false);
+                    }
+                  }}
+                >
+                  {cancelling ? 'Đang hủy...' : 'Hủy đơn'}
+                </Button>
+              </div>
+            )}
           </div>
 
           <div className="bg-card rounded-2xl border border-border p-6">
