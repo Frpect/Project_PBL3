@@ -4,6 +4,7 @@ namespace Project.DataLayer.Repository
 {
     public interface IOrderRepository
     {
+        Task<Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction> BeginTransactionAsync();
         Task AddOrderAsync(Order order);
         Task<Order?> GetByIdAsync(int id);
         Task<List<Order>> GetAllOrdersAsync();

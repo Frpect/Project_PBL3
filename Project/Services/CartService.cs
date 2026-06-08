@@ -25,7 +25,7 @@ namespace Project.ApplicationLogic.Service
             var stock = variant.Inventories.FirstOrDefault()?.Quantity ?? 0;
 
             if (stock < request.Quantity)
-                throw new Exception($"Insufficient stock. Available: {stock}");
+                throw new BadRequestException($"Insufficient stock. Available: {stock}");
 
             var cart = await _cartRepo.GetOrCreateByUserIdAsync(request.UserId);
 
@@ -104,16 +104,34 @@ namespace Project.ApplicationLogic.Service
 
         public async Task<CartResponse> SyncCartAsync(CartSyncRequest request)
         {
+            var cart = await _cartRepo.GetOrCreateByUserIdAsync(request.UserId);
+
             foreach (var line in request.Items.Where(i => i.Quantity > 0))
             {
-                await AddItemAsync(new AddToCartRequest
+                var variant = await _cartRepo.GetVariantAsync(line.VariantId);
+                if (variant == null) continue;
+
+                var existingItem = cart.CartItems
+                    .FirstOrDefault(ci => ci.VariantId == line.VariantId);
+
+                if (existingItem != null)
                 {
-                    UserId = request.UserId,
-                    VariantId = line.VariantId,
-                    Quantity = line.Quantity
-                });
+                    existingItem.Quantity += line.Quantity;
+                }
+                else
+                {
+                    var item = new CartItem
+                    {
+                        CartId = cart.CartId,
+                        VariantId = line.VariantId,
+                        Quantity = line.Quantity,
+                        Price = variant.Price ?? 0
+                    };
+                    await _cartRepo.AddItemAsync(item);
+                }
             }
 
+            await _cartRepo.SaveChangesAsync();
             return await GetCartAsync(request.UserId);
         }
     }

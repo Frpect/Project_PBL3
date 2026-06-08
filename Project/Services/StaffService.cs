@@ -3,16 +3,19 @@ using System.Text;
 using Project.ApplicationLogic.DTOs;
 using Project.DataLayer.Models;
 using Project.DataLayer.Repository;
+using Project.ExceptionHandling;
 
 namespace Project.ApplicationLogic.Service
 {
     public class StaffService : IStaffService
     {
         private readonly IStaffRepository _repo;
+        private readonly IPasswordHasher _passwordHasher;
 
-        public StaffService(IStaffRepository repo)
+        public StaffService(IStaffRepository repo, IPasswordHasher passwordHasher)
         {
             _repo = repo;
+            _passwordHasher = passwordHasher;
         }
 
         public async Task<List<StaffResponse>> GetAllAsync()
@@ -25,7 +28,7 @@ namespace Project.ApplicationLogic.Service
         {
             var user = await _repo.GetByIdAsync(id);
             if (user == null)
-                throw new Exception("Staff not found");
+                throw new NotFoundException("Staff not found");
             return MapToStaffResponse(user);
         }
 
@@ -34,25 +37,25 @@ namespace Project.ApplicationLogic.Service
             // Check if username exists
             var existingUsername = await _repo.GetByUsernameAsync(request.Username);
             if (existingUsername != null)
-                throw new Exception("Tên đăng nhập đã tồn tại");
+                throw new ConflictException("Tên đăng nhập đã tồn tại");
 
             // Check if email exists
             var existingEmail = await _repo.GetByEmailAsync(request.Email);
             if (existingEmail != null)
-                throw new Exception("Email đã được sử dụng");
+                throw new ConflictException("Email đã được sử dụng");
 
             // Check if phone exists
             if (!string.IsNullOrWhiteSpace(request.Phone))
             {
                 var existingPhone = await _repo.GetByPhoneAsync(request.Phone);
                 if (existingPhone != null)
-                    throw new Exception("Số điện thoại đã được sử dụng");
+                    throw new ConflictException("Số điện thoại đã được sử dụng");
             }
 
             var user = new User
             {
                 Username = request.Username,
-                PasswordHash = HashPassword(request.Password),
+                PasswordHash = _passwordHasher.HashPassword(request.Password),
                 Email = request.Email,
                 FullName = request.FullName,
                 Phone = request.Phone,
@@ -73,12 +76,12 @@ namespace Project.ApplicationLogic.Service
         {
             var user = await _repo.GetByIdAsync(id);
             if (user == null)
-                throw new Exception("Staff not found");
+                throw new NotFoundException("Staff not found");
 
             // Check if email is being used by another user
             var existingEmail = await _repo.GetByEmailAsync(request.Email);
             if (existingEmail != null && existingEmail.UserId != id)
-                throw new Exception("Email already exists");
+                throw new ConflictException("Email already exists");
 
             user.FullName = request.FullName;
             user.Email = request.Email;
@@ -93,7 +96,7 @@ namespace Project.ApplicationLogic.Service
         {
             var user = await _repo.GetByIdAsync(id);
             if (user == null)
-                throw new Exception("Staff not found");
+                throw new NotFoundException("Staff not found");
 
             user.Status = user.Status == "active" ? "locked" : "active";
             _repo.Update(user);
@@ -105,9 +108,9 @@ namespace Project.ApplicationLogic.Service
         {
             var user = await _repo.GetByIdAsync(id);
             if (user == null)
-                throw new Exception("Staff not found");
+                throw new NotFoundException("Staff not found");
 
-            user.PasswordHash = HashPassword(newPassword);
+            user.PasswordHash = _passwordHasher.HashPassword(newPassword);
 
             _repo.Update(user);
             await _repo.SaveChangesAsync();
@@ -117,7 +120,7 @@ namespace Project.ApplicationLogic.Service
         {
             var user = await _repo.GetByIdAsync(id);
             if (user == null)
-                throw new Exception("Staff not found");
+                throw new NotFoundException("Staff not found");
 
             _repo.Delete(user);
             await _repo.SaveChangesAsync();
@@ -135,12 +138,5 @@ namespace Project.ApplicationLogic.Service
             CreatedAt = u.CreatedAt,
             Role = u.Role?.RoleName ?? string.Empty
         };
-
-        private string HashPassword(string password)
-        {
-            using var sha256 = SHA256.Create();
-            var bytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
-            return Convert.ToBase64String(bytes);
-        }
     }
 }

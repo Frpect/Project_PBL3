@@ -13,6 +13,11 @@ namespace Project.DataLayer.Repository
             _context = context;
         }
 
+        public async Task<Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction> BeginTransactionAsync()
+        {
+            return await _context.Database.BeginTransactionAsync();
+        }
+
         // 🔹 Tạo order
         public async Task AddOrderAsync(Order order)
         {

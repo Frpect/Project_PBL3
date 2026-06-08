@@ -4,7 +4,12 @@ namespace Project.DataLayer.Repository;
 
 public interface IDashboardRepository
 {
-    Task<DashboardSummaryDto> GetSummaryAsync(string? period, CancellationToken cancellationToken = default);
+    Task<DashboardSummaryDto> GetSummaryAsync(
+        DateTime periodStart, 
+        DateTime periodEnd, 
+        DateTime prevPeriodStart, 
+        DateTime prevPeriodEnd, 
+        CancellationToken cancellationToken = default);
     Task<DashboardStatsComparisonDto> GetStatsComparisonAsync(CancellationToken cancellationToken = default);
     Task<List<LowStockProductDto>> GetLowStockAsync(int threshold, CancellationToken cancellationToken = default);
     Task<List<RevenuePointDto>> GetRevenueSeriesAsync(DateTime from, DateTime to, CancellationToken cancellationToken = default);

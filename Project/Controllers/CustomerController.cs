@@ -20,11 +20,11 @@ namespace Project.PresentationLayer.Controllers
 
         // GET /api/Customer/{id}
         [HttpGet("{id}")]
-        public IActionResult GetById(int id)
+        public async Task<IActionResult> GetById(int id)
         {
             try
             {
-                var result = _service.GetCustomerById(id);
+                var result = await _service.GetCustomerByIdAsync(id);
                 return Ok(result);
             }
             catch (NotFoundException ex)
@@ -35,11 +35,11 @@ namespace Project.PresentationLayer.Controllers
 
         // PATCH /api/Customer/{id}/toggle-status
         [HttpPatch("{id}/toggle-status")]
-        public IActionResult ToggleStatus(int id)
+        public async Task<IActionResult> ToggleStatus(int id)
         {
             try
             {
-                var result = _service.ToggleStatus(id);
+                var result = await _service.ToggleStatusAsync(id);
                 return Ok(result);
             }
             catch (NotFoundException ex)
@@ -50,15 +50,15 @@ namespace Project.PresentationLayer.Controllers
 
         // PATCH /api/Customer/{id}/toggle-lock (alias)
         [HttpPatch("{id}/toggle-lock")]
-        public IActionResult ToggleLock(int id) => ToggleStatus(id);
+        public async Task<IActionResult> ToggleLock(int id) => await ToggleStatus(id);
 
         // POST /api/Customer/{id}/reset-password
         [HttpPost("{id}/reset-password")]
-        public IActionResult ResetPassword(int id, [FromBody] ResetPasswordRequest request)
+        public async Task<IActionResult> ResetPassword(int id, [FromBody] ResetPasswordRequest request)
         {
             try
             {
-                _service.ResetPassword(id, request.NewPassword);
+                await _service.ResetPasswordAsync(id, request.NewPassword);
                 return Ok(new { message = "Đã đặt lại mật khẩu" });
             }
             catch (NotFoundException ex)
@@ -69,19 +69,19 @@ namespace Project.PresentationLayer.Controllers
 
         // GET /api/Customer/search?query=
         [HttpGet("search")]
-        public IActionResult Search([FromQuery] string? query)
+        public async Task<IActionResult> Search([FromQuery] string? query)
         {
-            var result = _service.SearchCustomers(query);
+            var result = await _service.SearchCustomersAsync(query);
             return Ok(result);
         }
 
         // GET /api/Customer/{id}/orders
         [HttpGet("{id}/orders")]
-        public IActionResult GetOrders(int id)
+        public async Task<IActionResult> GetOrders(int id)
         {
             try
             {
-                var result = _service.GetCustomerOrders(id);
+                var result = await _service.GetCustomerOrdersAsync(id);
                 return Ok(result);
             }
             catch (NotFoundException ex)
@@ -92,11 +92,11 @@ namespace Project.PresentationLayer.Controllers
 
         // GET /api/Customer/{id}/address
         [HttpGet("{id}/address")]
-        public IActionResult GetAddresses(int id)
+        public async Task<IActionResult> GetAddresses(int id)
         {
             try
             {
-                var result = _service.GetCustomerAddresses(id);
+                var result = await _service.GetCustomerAddressesAsync(id);
                 return Ok(result);
             }
             catch (NotFoundException ex)
@@ -107,11 +107,11 @@ namespace Project.PresentationLayer.Controllers
 
         // POST /api/Customer/{id}/address
         [HttpPost("{id}/address")]
-        public IActionResult AddAddress(int id, [FromBody] AddressUpsertRequest request)
+        public async Task<IActionResult> AddAddress(int id, [FromBody] AddressUpsertRequest request)
         {
             try
             {
-                var result = _service.AddAddress(id, request);
+                var result = await _service.AddAddressAsync(id, request);
                 return Ok(result);
             }
             catch (NotFoundException ex)
@@ -122,11 +122,11 @@ namespace Project.PresentationLayer.Controllers
 
         // PUT /api/Customer/{id}/address/{addressId}
         [HttpPut("{id}/address/{addressId}")]
-        public IActionResult UpdateAddress(int id, int addressId, [FromBody] AddressUpsertRequest request)
+        public async Task<IActionResult> UpdateAddress(int id, int addressId, [FromBody] AddressUpsertRequest request)
         {
             try
             {
-                var result = _service.UpdateAddress(id, addressId, request);
+                var result = await _service.UpdateAddressAsync(id, addressId, request);
                 return Ok(result);
             }
             catch (NotFoundException ex)
@@ -137,11 +137,11 @@ namespace Project.PresentationLayer.Controllers
 
         // DELETE /api/Customer/{id}/address/{addressId}
         [HttpDelete("{id}/address/{addressId}")]
-        public IActionResult DeleteAddress(int id, int addressId)
+        public async Task<IActionResult> DeleteAddress(int id, int addressId)
         {
             try
             {
-                _service.DeleteAddress(id, addressId);
+                await _service.DeleteAddressAsync(id, addressId);
                 return Ok(new { message = "Address removed" });
             }
             catch (NotFoundException ex)
@@ -152,11 +152,11 @@ namespace Project.PresentationLayer.Controllers
 
         // PUT /api/Customer
         [HttpPut]
-        public IActionResult UpdateCustomer([FromBody] UpdateCustomerRequest request)
+        public async Task<IActionResult> UpdateCustomer([FromBody] UpdateCustomerRequest request)
         {
             try
             {
-                var result = _service.UpdateCustomer(request);
+                var result = await _service.UpdateCustomerAsync(request);
                 return Ok(result);
             }
             catch (NotFoundException ex)

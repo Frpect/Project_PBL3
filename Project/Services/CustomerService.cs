@@ -16,37 +16,37 @@ namespace Project.ApplicationLogic.Service
             _userRepo = userRepo;
         }
 
-        public CustomerResponse GetCustomerById(int id)
+        public async Task<CustomerResponse> GetCustomerByIdAsync(int id)
         {
-            var user = _userRepo.GetById(id);
+            var user = await _userRepo.GetByIdAsync(id);
             if (user == null)
                 throw new NotFoundException("Customer not found");
 
             return MapToCustomerResponse(user);
         }
 
-        public CustomerResponse ToggleStatus(int id)
+        public async Task<CustomerResponse> ToggleStatusAsync(int id)
         {
-            var user = _userRepo.GetById(id);
+            var user = await _userRepo.GetByIdAsync(id);
             if (user == null)
                 throw new NotFoundException("Customer not found");
 
             user.Status = user.Status == "active" ? "locked" : "active";
-            _userRepo.Save();
+            await _userRepo.SaveAsync();
 
             return MapToCustomerResponse(user);
         }
 
-        public List<CustomerResponse> SearchCustomers(string? query)
+        public async Task<List<CustomerResponse>> SearchCustomersAsync(string? query)
         {
-            var users = _userRepo.GetCustomers(query);
+            var users = await _userRepo.GetCustomersAsync(query);
 
             return users.Select(u => MapToCustomerResponse(u)).ToList();
         }
 
-        public List<OrderResponse> GetCustomerOrders(int id)
+        public async Task<List<OrderResponse>> GetCustomerOrdersAsync(int id)
         {
-            var user = _userRepo.GetByIdWithOrders(id);
+            var user = await _userRepo.GetByIdWithOrdersAsync(id);
             if (user == null)
                 throw new NotFoundException("Customer not found");
 
@@ -73,9 +73,9 @@ namespace Project.ApplicationLogic.Service
                 }).ToList();
         }
 
-        public List<AddressResponse> GetCustomerAddresses(int id)
+        public async Task<List<AddressResponse>> GetCustomerAddressesAsync(int id)
         {
-            var user = _userRepo.GetByIdWithAddresses(id);
+            var user = await _userRepo.GetByIdWithAddressesAsync(id);
             if (user == null)
                 throw new NotFoundException("Customer not found");
 
@@ -93,9 +93,9 @@ namespace Project.ApplicationLogic.Service
             }).ToList();
         }
 
-        public CustomerResponse UpdateCustomer(UpdateCustomerRequest request)
+        public async Task<CustomerResponse> UpdateCustomerAsync(UpdateCustomerRequest request)
         {
-            var user = _userRepo.GetById(request.UserId);
+            var user = await _userRepo.GetByIdAsync(request.UserId);
             if (user == null)
                 throw new NotFoundException("Customer not found");
 
@@ -105,14 +105,14 @@ namespace Project.ApplicationLogic.Service
             if (request.Status != null)
                 user.Status = request.Status;
 
-            _userRepo.Save();
+            await _userRepo.SaveAsync();
 
             return MapToCustomerResponse(user);
         }
 
-        public AddressResponse AddAddress(int userId, AddressUpsertRequest request)
+        public async Task<AddressResponse> AddAddressAsync(int userId, AddressUpsertRequest request)
         {
-            var user = _userRepo.GetByIdWithAddresses(userId);
+            var user = await _userRepo.GetByIdWithAddressesAsync(userId);
             if (user == null)
                 throw new NotFoundException("Customer not found");
 
@@ -133,19 +133,19 @@ namespace Project.ApplicationLogic.Service
                 IsDefault = request.IsDefault
             };
 
-            _userRepo.AddAddress(addr);
-            _userRepo.Save();
+            await _userRepo.AddAddressAsync(addr);
+            await _userRepo.SaveAsync();
 
             return MapAddress(addr);
         }
 
-        public AddressResponse UpdateAddress(int userId, int addressId, AddressUpsertRequest request)
+        public async Task<AddressResponse> UpdateAddressAsync(int userId, int addressId, AddressUpsertRequest request)
         {
-            var user = _userRepo.GetByIdWithAddresses(userId);
+            var user = await _userRepo.GetByIdWithAddressesAsync(userId);
             if (user == null)
                 throw new NotFoundException("Customer not found");
 
-            var addr = _userRepo.GetAddressForUser(addressId, userId);
+            var addr = await _userRepo.GetAddressForUserAsync(addressId, userId);
             if (addr == null)
                 throw new NotFoundException("Address not found");
 
@@ -162,27 +162,27 @@ namespace Project.ApplicationLogic.Service
             addr.AddressType = string.IsNullOrWhiteSpace(request.AddressType) ? "home" : request.AddressType;
             addr.IsDefault = request.IsDefault;
 
-            _userRepo.Save();
+            await _userRepo.SaveAsync();
             return MapAddress(addr);
         }
 
-        public void DeleteAddress(int userId, int addressId)
+        public async Task DeleteAddressAsync(int userId, int addressId)
         {
-            var addr = _userRepo.GetAddressForUser(addressId, userId);
+            var addr = await _userRepo.GetAddressForUserAsync(addressId, userId);
             if (addr == null)
                 throw new NotFoundException("Address not found");
 
             _userRepo.RemoveAddress(addr);
-            _userRepo.Save();
+            await _userRepo.SaveAsync();
         }
 
-        public void ResetPassword(int userId, string newPassword)
+        public async Task ResetPasswordAsync(int userId, string newPassword)
         {
-            var user = _userRepo.GetById(userId);
+            var user = await _userRepo.GetByIdAsync(userId);
             if (user == null) throw new NotFoundException("Customer not found");
             using var sha256 = SHA256.Create();
             user.PasswordHash = Convert.ToBase64String(sha256.ComputeHash(Encoding.UTF8.GetBytes(newPassword)));
-            _userRepo.Save();
+            await _userRepo.SaveAsync();
         }
 
         private static AddressResponse MapAddress(Address a) => new()

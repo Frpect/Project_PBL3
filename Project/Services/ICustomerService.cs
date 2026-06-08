@@ -3,16 +3,16 @@ using Project.ApplicationLogic.DTOs;
 namespace Project.ApplicationLogic.Service
 {
     public interface ICustomerService
-    {
-        CustomerResponse GetCustomerById(int id);
-        CustomerResponse ToggleStatus(int id);
-        List<CustomerResponse> SearchCustomers(string? query);
-        List<OrderResponse> GetCustomerOrders(int id);
-        List<AddressResponse> GetCustomerAddresses(int id);
-        AddressResponse AddAddress(int userId, AddressUpsertRequest request);
-        AddressResponse UpdateAddress(int userId, int addressId, AddressUpsertRequest request);
-        void DeleteAddress(int userId, int addressId);
-        CustomerResponse UpdateCustomer(UpdateCustomerRequest request);
-        void ResetPassword(int userId, string newPassword);
-    }
+{
+    Task<CustomerResponse> GetCustomerByIdAsync(int id);
+    Task<CustomerResponse> ToggleStatusAsync(int id);
+    Task<List<CustomerResponse>> SearchCustomersAsync(string? query);
+    Task<List<OrderResponse>> GetCustomerOrdersAsync(int id);
+    Task<List<AddressResponse>> GetCustomerAddressesAsync(int id);
+    Task<AddressResponse> AddAddressAsync(int userId, AddressUpsertRequest request);
+    Task<AddressResponse> UpdateAddressAsync(int userId, int addressId, AddressUpsertRequest request);
+    Task DeleteAddressAsync(int userId, int addressId);
+    Task<CustomerResponse> UpdateCustomerAsync(UpdateCustomerRequest request);
+    Task ResetPasswordAsync(int userId, string newPassword);
+}
 }

@@ -1,6 +1,7 @@
-﻿using Project.ApplicationLogic.DTOs;
+using Project.ApplicationLogic.DTOs;
 using Project.DataLayer.Models;
 using Project.DataLayer.Repository;
+using Project.ExceptionHandling;
 
 namespace Project.ApplicationLogic.Service
 {
@@ -26,7 +27,7 @@ namespace Project.ApplicationLogic.Service
             var p = await _repo.GetByIdAsync(id);
 
             if (p == null)
-                throw new Exception("Product not found");
+                throw new NotFoundException("Product not found");
 
             var firstVariant = p.ProductVariants.FirstOrDefault();
             var imageUrl = p.ProductImages.FirstOrDefault()?.ImageUrl;
@@ -56,10 +57,10 @@ namespace Project.ApplicationLogic.Service
         public async Task<int> CreateAsync(ProductRequest request)
         {
             if (string.IsNullOrWhiteSpace(request.ProductName))
-                throw new Exception("Product name is required");
+                throw new BadRequestException("Product name is required");
 
             if (!await _repo.CategoryExistsAsync(request.CategoryId))
-                throw new Exception("Category not found");
+                throw new NotFoundException("Category not found");
 
             var product = new Product
             {
@@ -85,13 +86,13 @@ namespace Project.ApplicationLogic.Service
             var product = await _repo.GetByIdAsync(id);
 
             if (product == null)
-                throw new Exception("Product not found");
+                throw new NotFoundException("Product not found");
 
             if (string.IsNullOrWhiteSpace(request.ProductName))
-                throw new Exception("Product name is required");
+                throw new BadRequestException("Product name is required");
 
             if (!await _repo.CategoryExistsAsync(request.CategoryId))
-                throw new Exception("Category not found");
+                throw new NotFoundException("Category not found");
 
             product.ProductName = request.ProductName;
             product.CategoryId = request.CategoryId;
@@ -111,7 +112,7 @@ namespace Project.ApplicationLogic.Service
             var product = await _repo.GetByIdAsync(id);
 
             if (product == null)
-                throw new Exception("Product not found");
+                throw new NotFoundException("Product not found");
 
             _repo.Delete(product);
             await _repo.SaveChangesAsync();
@@ -151,7 +152,7 @@ namespace Project.ApplicationLogic.Service
         public async Task ToggleStatusAsync(int id)
         {
             var product = await _repo.GetByIdAsync(id);
-            if (product == null) throw new Exception("Product not found");
+            if (product == null) throw new NotFoundException("Product not found");
             product.Status = product.Status == "inactive" ? "active" : "inactive";
             _repo.Update(product);
             await _repo.SaveChangesAsync();
@@ -161,7 +162,7 @@ namespace Project.ApplicationLogic.Service
         public async Task<string> AddImageUrlAsync(int productId, string imageUrl)
         {
             var product = await _repo.GetByIdAsync(productId);
-            if (product == null) throw new Exception("Product not found");
+            if (product == null) throw new NotFoundException("Product not found");
             product.ProductImages.Add(new DataLayer.Models.ProductImage
             {
                 ProductId = productId,

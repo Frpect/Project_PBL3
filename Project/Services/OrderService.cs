@@ -19,91 +19,101 @@ namespace Project.ApplicationLogic.Service
         // 🔹 Đặt order — ưu tiên items từ request (client cart), fallback sang server cart
         public async Task<OrderResponse> PlaceOrderAsync(PlaceOrderRequest request)
         {
-            // Chuẩn hóa danh sách items
-            List<(int variantId, int quantity, decimal price)> orderItems;
+            using var transaction = await _orderRepo.BeginTransactionAsync();
+            try
+            {
+                // Chuẩn hóa danh sách items
+                List<(int variantId, int quantity, decimal price)> orderItems;
 
-            if (request.Items != null && request.Items.Any())
-            {
-                orderItems = request.Items
-                    .Select(i => (i.VariantId, i.Quantity, i.Price))
-                    .ToList();
-            }
-            else
-            {
-                var cart = await _cartRepo.GetByUserIdAsync(request.UserId);
-                if (cart == null || !cart.CartItems.Any())
-                    throw new Exception("Cart is empty");
-                orderItems = cart.CartItems
-                    .Select(i => (i.VariantId ?? 0, i.Quantity ?? 1, i.Price ?? 0m))
-                    .ToList();
-            }
-
-            // Check tồn kho + tính tổng tiền
-            decimal total = 0;
-            foreach (var (variantId, quantity, price) in orderItems)
-            {
-                var inventory = await _orderRepo.GetInventoryByVariantIdAsync(variantId);
-                if (inventory == null || inventory.Quantity < quantity)
-                    throw new Exception($"Insufficient stock for variant {variantId}");
-                total += price * quantity;
-            }
-
-            // Áp dụng discount
-            decimal discount = 0;
-            if (request.PromotionId.HasValue)
-            {
-                var promotion = await _orderRepo.GetPromotionAsync(request.PromotionId.Value);
-                if (promotion != null && promotion.Status == "active")
+                if (request.Items != null && request.Items.Any())
                 {
-                    discount = promotion.DiscountType == "percent"
-                        ? total * (promotion.DiscountValue ?? 0) / 100
-                        : (promotion.DiscountValue ?? 0);
+                    orderItems = request.Items
+                        .Select(i => (i.VariantId, i.Quantity, i.Price))
+                        .ToList();
                 }
-            }
-
-            // Tạo order
-            var order = new Order
-            {
-                UserId = request.UserId,
-                PromotionId = request.PromotionId,
-                TotalAmount = total,
-                DiscountAmount = discount,
-                OrderStatus = "pending",
-                OrderDate = DateTime.Now,
-                ShippingAddressId = request.ShippingAddressId
-            };
-
-            await _orderRepo.AddOrderAsync(order);
-            await _orderRepo.SaveChangesAsync();
-
-            // Tạo order detail + trừ kho + lưu lịch sử kho
-            foreach (var (variantId, quantity, price) in orderItems)
-            {
-                order.OrderDetails.Add(new OrderDetail
+                else
                 {
-                    OrderId = order.OrderId,
-                    VariantId = variantId,
-                    Quantity = quantity,
-                    Price = price
-                });
+                    var cart = await _cartRepo.GetByUserIdAsync(request.UserId);
+                    if (cart == null || !cart.CartItems.Any())
+                        throw new Exception("Cart is empty");
+                    orderItems = cart.CartItems
+                        .Select(i => (i.VariantId ?? 0, i.Quantity ?? 1, i.Price ?? 0m))
+                        .ToList();
+                }
 
-                var inventory = await _orderRepo.GetInventoryByVariantIdAsync(variantId);
-                inventory!.Quantity -= quantity;
-                inventory.LastUpdated = DateTime.Now;
-
-                await _orderRepo.AddTransactionAsync(new InventoryTransaction
+                // Check tồn kho + tính tổng tiền
+                decimal total = 0;
+                foreach (var (variantId, quantity, price) in orderItems)
                 {
-                    VariantId = variantId,
-                    Quantity = -quantity,
-                    Type = "Export",
-                    Note = $"Đặt hàng #{order.OrderId}",
-                    CreatedAt = DateTime.Now
-                });
+                    var inventory = await _orderRepo.GetInventoryByVariantIdAsync(variantId);
+                    if (inventory == null || inventory.Quantity < quantity)
+                        throw new Exception($"Insufficient stock for variant {variantId}");
+                    total += price * quantity;
+                }
+
+                // Áp dụng discount
+                decimal discount = 0;
+                if (request.PromotionId.HasValue)
+                {
+                    var promotion = await _orderRepo.GetPromotionAsync(request.PromotionId.Value);
+                    if (promotion != null && promotion.Status == "active")
+                    {
+                        discount = promotion.DiscountType == "percent"
+                            ? total * (promotion.DiscountValue ?? 0) / 100
+                            : (promotion.DiscountValue ?? 0);
+                    }
+                }
+
+                // Tạo order
+                var order = new Order
+                {
+                    UserId = request.UserId,
+                    PromotionId = request.PromotionId,
+                    TotalAmount = total,
+                    DiscountAmount = discount,
+                    OrderStatus = "pending",
+                    OrderDate = DateTime.Now,
+                    ShippingAddressId = request.ShippingAddressId
+                };
+
+                await _orderRepo.AddOrderAsync(order);
+                await _orderRepo.SaveChangesAsync();
+
+                // Tạo order detail + trừ kho + lưu lịch sử kho
+                foreach (var (variantId, quantity, price) in orderItems)
+                {
+                    order.OrderDetails.Add(new OrderDetail
+                    {
+                        OrderId = order.OrderId,
+                        VariantId = variantId,
+                        Quantity = quantity,
+                        Price = price
+                    });
+
+                    var inventory = await _orderRepo.GetInventoryByVariantIdAsync(variantId);
+                    inventory!.Quantity -= quantity;
+                    inventory.LastUpdated = DateTime.Now;
+
+                    await _orderRepo.AddTransactionAsync(new InventoryTransaction
+                    {
+                        VariantId = variantId,
+                        Quantity = -quantity,
+                        Type = "Export",
+                        Note = $"Đặt hàng #{order.OrderId}",
+                        CreatedAt = DateTime.Now
+                    });
+                }
+
+                await _orderRepo.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                return MapToResponse(order);
             }
-
-            await _orderRepo.SaveChangesAsync();
-
-            return MapToResponse(order);
+            catch (Exception)
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
 
         // 🔹 Lấy order theo id
@@ -141,6 +151,12 @@ namespace Project.ApplicationLogic.Service
             if (!validStatuses.Contains(status))
                 throw new Exception($"Invalid status: {status}");
 
+            // Nếu chuyển sang cancelled, thực hiện hoàn kho
+            if (status == "cancelled" && order.OrderStatus != "cancelled")
+            {
+                await RestoreInventoryAsync(order);
+            }
+
             await _orderRepo.UpdateStatusAsync(orderId, status);
             await _orderRepo.SaveChangesAsync();
         }
@@ -175,8 +191,36 @@ namespace Project.ApplicationLogic.Service
             if (order.OrderStatus != "pending")
                 throw new Exception("Only pending orders can be cancelled");
 
+            // Hoàn kho trước khi đổi trạng thái
+            await RestoreInventoryAsync(order);
+
             order.OrderStatus = "cancelled";
             await _orderRepo.SaveChangesAsync();
+        }
+
+        private async Task RestoreInventoryAsync(Order order)
+        {
+            foreach (var detail in order.OrderDetails)
+            {
+                if (detail.VariantId.HasValue)
+                {
+                    var inventory = await _orderRepo.GetInventoryByVariantIdAsync(detail.VariantId.Value);
+                    if (inventory != null)
+                    {
+                        inventory.Quantity += detail.Quantity ?? 0;
+                        inventory.LastUpdated = DateTime.Now;
+
+                        await _orderRepo.AddTransactionAsync(new InventoryTransaction
+                        {
+                            VariantId = detail.VariantId.Value,
+                            Quantity = detail.Quantity ?? 0,
+                            Type = "Import",
+                            Note = $"Hoàn kho do hủy đơn #{order.OrderId}",
+                            CreatedAt = DateTime.Now
+                        });
+                    }
+                }
+            }
         }
 
         // 🔹 Map Order sang OrderResponse

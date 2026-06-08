@@ -13,74 +13,36 @@ public class DashboardRepository : IDashboardRepository
         _db = db;
     }
 
-    private static decimal OrderNet(Project.DataLayer.Models.Order o) =>
-        (o.TotalAmount ?? 0) - (o.DiscountAmount ?? 0);
-
-    public async Task<DashboardSummaryDto> GetSummaryAsync(string? period, CancellationToken cancellationToken = default)
+    public async Task<DashboardSummaryDto> GetSummaryAsync(
+        DateTime periodStart, 
+        DateTime periodEnd, 
+        DateTime prevPeriodStart, 
+        DateTime prevPeriodEnd, 
+        CancellationToken cancellationToken = default)
     {
-        var allOrders = await _db.Orders
-            .AsNoTracking()
+        var totalCustomers = await _db.Users
+            .CountAsync(u => u.DeletedAt == null && u.RoleId == 2, cancellationToken);
+            
+        var totalProducts = await _db.Products
+            .CountAsync(p => p.DeletedAt == null, cancellationToken);
+
+        // Fetch only necessary data from DB for current period
+        var currentStats = await _db.Orders
+            .Where(o => o.OrderDate >= periodStart && o.OrderDate < periodEnd && o.OrderStatus != "cancelled")
+            .Select(o => new { o.TotalAmount, o.DiscountAmount })
             .ToListAsync(cancellationToken);
 
-        var totalCustomers = await _db.Users.CountAsync(u => u.DeletedAt == null && u.RoleId == 2, cancellationToken);
-        var totalProducts = await _db.Products.CountAsync(p => p.DeletedAt == null, cancellationToken);
+        var currentRevenue = currentStats.Sum(o => (o.TotalAmount ?? 0) - (o.DiscountAmount ?? 0));
+        var currentOrdersCount = currentStats.Count;
 
-        // Calculate revenue and orders based on period
-        var today = DateTime.Today;
-        DateTime periodStart, periodEnd, prevPeriodStart, prevPeriodEnd;
+        // Fetch only necessary data from DB for previous period
+        var previousStats = await _db.Orders
+            .Where(o => o.OrderDate >= prevPeriodStart && o.OrderDate < prevPeriodEnd && o.OrderStatus != "cancelled")
+            .Select(o => new { o.TotalAmount, o.DiscountAmount })
+            .ToListAsync(cancellationToken);
 
-        switch (period?.ToLower())
-        {
-            case "day":
-                periodStart = new DateTime(today.Year, today.Month, today.Day);
-                periodEnd = periodStart.AddDays(1);
-                prevPeriodStart = periodStart.AddDays(-1);
-                prevPeriodEnd = periodStart;
-                break;
-            case "week":
-                var dayOfWeek = (int)today.DayOfWeek;
-                var daysSinceMonday = (dayOfWeek + 6) % 7;
-                periodStart = today.AddDays(-daysSinceMonday);
-                periodEnd = periodStart.AddDays(7);
-                prevPeriodStart = periodStart.AddDays(-7);
-                prevPeriodEnd = periodStart;
-                break;
-            case "year":
-                periodStart = new DateTime(today.Year, 1, 1);
-                periodEnd = new DateTime(today.Year + 1, 1, 1);
-                prevPeriodStart = new DateTime(today.Year - 1, 1, 1);
-                prevPeriodEnd = periodStart;
-                break;
-            case "month":
-            default:
-                periodStart = new DateTime(today.Year, today.Month, 1);
-                periodEnd = periodStart.AddMonths(1);
-                prevPeriodStart = periodStart.AddMonths(-1);
-                prevPeriodEnd = periodStart;
-                break;
-        }
-
-        var currentPeriodOrders = allOrders
-            .Where(o => o.OrderDate.HasValue && o.OrderDate.Value >= periodStart && o.OrderDate.Value < periodEnd)
-            .ToList();
-
-        var previousPeriodOrders = allOrders
-            .Where(o => o.OrderDate.HasValue && o.OrderDate.Value >= prevPeriodStart && o.OrderDate.Value < prevPeriodEnd)
-            .ToList();
-
-        var currentRevenue = currentPeriodOrders
-            .Where(o => !string.Equals(o.OrderStatus, "cancelled", StringComparison.OrdinalIgnoreCase))
-            .Sum(OrderNet);
-
-        var currentOrdersCount = currentPeriodOrders
-            .Count(o => !string.Equals(o.OrderStatus, "cancelled", StringComparison.OrdinalIgnoreCase));
-
-        var previousRevenue = previousPeriodOrders
-            .Where(o => !string.Equals(o.OrderStatus, "cancelled", StringComparison.OrdinalIgnoreCase))
-            .Sum(OrderNet);
-
-        var previousOrdersCount = previousPeriodOrders
-            .Count(o => !string.Equals(o.OrderStatus, "cancelled", StringComparison.OrdinalIgnoreCase));
+        var previousRevenue = previousStats.Sum(o => (o.TotalAmount ?? 0) - (o.DiscountAmount ?? 0));
+        var previousOrdersCount = previousStats.Count;
 
         // Calculate growth
         var revenueGrowth = previousRevenue > 0
@@ -110,20 +72,22 @@ public class DashboardRepository : IDashboardRepository
         var endThisWeek = startThisWeek.AddDays(7);
         var startLastWeek = startThisWeek.AddDays(-7);
 
-        var thisWeek = await _db.Orders
-            .Where(o => o.OrderDate >= startThisWeek && o.OrderDate < endThisWeek)
+        var thisWeekStats = await _db.Orders
+            .Where(o => o.OrderDate >= startThisWeek && o.OrderDate < endThisWeek && o.OrderStatus != "cancelled")
+            .Select(o => new { o.TotalAmount, o.DiscountAmount })
             .ToListAsync(cancellationToken);
 
-        var lastWeek = await _db.Orders
-            .Where(o => o.OrderDate >= startLastWeek && o.OrderDate < startThisWeek)
+        var lastWeekStats = await _db.Orders
+            .Where(o => o.OrderDate >= startLastWeek && o.OrderDate < startThisWeek && o.OrderStatus != "cancelled")
+            .Select(o => new { o.TotalAmount, o.DiscountAmount })
             .ToListAsync(cancellationToken);
 
         return new DashboardStatsComparisonDto
         {
-            ThisWeekRevenue = thisWeek.Where(o => o.OrderStatus != "cancelled").Sum(OrderNet),
-            ThisWeekOrders = thisWeek.Count(o => o.OrderStatus != "cancelled"),
-            LastWeekRevenue = lastWeek.Where(o => o.OrderStatus != "cancelled").Sum(OrderNet),
-            LastWeekOrders = lastWeek.Count(o => o.OrderStatus != "cancelled")
+            ThisWeekRevenue = thisWeekStats.Sum(o => (o.TotalAmount ?? 0) - (o.DiscountAmount ?? 0)),
+            ThisWeekOrders = thisWeekStats.Count,
+            LastWeekRevenue = lastWeekStats.Sum(o => (o.TotalAmount ?? 0) - (o.DiscountAmount ?? 0)),
+            LastWeekOrders = lastWeekStats.Count
         };
     }
 

@@ -12,51 +12,50 @@ namespace Project.DataLayer.Repository
         {
             _context = context;
         }
-       
-        public User GetByIdentifier(string identifier)
+
+        public async Task<User?> GetByIdentifierAsync(string identifier)
         {
-            return _context.Users
-                .FirstOrDefault(u => u.DeletedAt == null && (u.Username == identifier || u.Email == identifier));
+            return await _context.Users
+                .FirstOrDefaultAsync(u => u.DeletedAt == null && (u.Username == identifier || u.Email == identifier));
         }
 
-        public User? GetByEmail(string email)
+        public async Task<User?> GetByEmailAsync(string email)
         {
-            return _context.Users.FirstOrDefault(u => u.DeletedAt == null && u.Email == email);
+            return await _context.Users.FirstOrDefaultAsync(u => u.DeletedAt == null && u.Email == email);
         }
 
-        public User? GetByPhone(string phone)
+        public async Task<User?> GetByPhoneAsync(string phone)
         {
-            return _context.Users.FirstOrDefault(u => u.DeletedAt == null && u.Phone == phone);
+            return await _context.Users.FirstOrDefaultAsync(u => u.DeletedAt == null && u.Phone == phone);
         }
 
-        public User? GetById(int userId)
+        public async Task<User?> GetByIdAsync(int userId)
         {
-            return _context.Users.FirstOrDefault(u => u.DeletedAt == null && u.UserId == userId);
+            return await _context.Users.FirstOrDefaultAsync(u => u.DeletedAt == null && u.UserId == userId);
         }
 
-        public User? GetByIdWithAddresses(int userId)
+        public async Task<User?> GetByIdWithAddressesAsync(int userId)
         {
-            return _context.Users
+            return await _context.Users
                 .Include(u => u.Addresses.Where(a => a.DeletedAt == null))
-                .FirstOrDefault(u => u.DeletedAt == null && u.UserId == userId);
+                .FirstOrDefaultAsync(u => u.DeletedAt == null && u.UserId == userId);
         }
 
-        public User? GetByIdWithOrders(int userId)
+        public async Task<User?> GetByIdWithOrdersAsync(int userId)
         {
-            return _context.Users
+            return await _context.Users
                 .Include(u => u.Orders)
                     .ThenInclude(o => o.OrderDetails)
                         .ThenInclude(od => od.Variant)
-                            .ThenInclude(v => v.Product)
+                            .ThenInclude(v => v!.Product)
                 .Include(u => u.Orders)
                     .ThenInclude(o => o.ShippingAddress)
-                .FirstOrDefault(u => u.DeletedAt == null && u.UserId == userId);
+                .FirstOrDefaultAsync(u => u.DeletedAt == null && u.UserId == userId);
         }
 
-        public List<User> GetCustomers(string? search)
+        public async Task<List<User>> GetCustomersAsync(string? search)
         {
             var query = _context.Users
-                .Include(u => u.Orders)
                 .Where(u => u.DeletedAt == null && u.RoleId == 2)
                 .AsQueryable();
 
@@ -65,34 +64,34 @@ namespace Project.DataLayer.Repository
                     (u.FullName != null && u.FullName.Contains(search)) ||
                     u.Username.Contains(search));
 
-            return query.OrderBy(u => u.FullName).ToList();
+            return await query.OrderBy(u => u.FullName).ToListAsync();
         }
 
-        public string? GetRoleNameById(int roleId)
+        public async Task<string?> GetRoleNameByIdAsync(int roleId)
         {
-            return _context.Roles
-                .FirstOrDefault(r => r.RoleId == roleId)
-                ?.RoleName;
+            var role = await _context.Roles
+                .FirstOrDefaultAsync(r => r.RoleId == roleId);
+            return role?.RoleName;
         }
 
-        public void Add(User user)
+        public async Task AddAsync(User user)
         {
-            _context.Users.Add(user);
+            await _context.Users.AddAsync(user);
         }
 
-        public void Save()
+        public async Task SaveAsync()
         {
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
         }
 
-        public Address? GetAddressForUser(int addressId, int userId)
+        public async Task<Address?> GetAddressForUserAsync(int addressId, int userId)
         {
-            return _context.Addresses.FirstOrDefault(a => a.DeletedAt == null && a.AddressId == addressId && a.UserId == userId);
+            return await _context.Addresses.FirstOrDefaultAsync(a => a.DeletedAt == null && a.AddressId == addressId && a.UserId == userId);
         }
 
-        public void AddAddress(Address address)
+        public async Task AddAddressAsync(Address address)
         {
-            _context.Addresses.Add(address);
+            await _context.Addresses.AddAsync(address);
         }
 
         public void RemoveAddress(Address address)
