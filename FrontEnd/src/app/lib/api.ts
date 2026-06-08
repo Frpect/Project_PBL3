@@ -1,20 +1,23 @@
 const API_BASE = (import.meta as any).env?.VITE_API_BASE ?? 'http://localhost:5247';
 
-// ─── Cloudinary Config ────────────────────────────────────────────────────────
-const CLOUDINARY_CLOUD = (import.meta as any).env?.VITE_CLOUDINARY_CLOUD ?? 'YOUR_CLOUD_NAME';
-const CLOUDINARY_PRESET = (import.meta as any).env?.VITE_CLOUDINARY_PRESET ?? 'YOUR_UPLOAD_PRESET';
-
 export async function uploadToCloudinary(file: File): Promise<string> {
   const form = new FormData();
   form.append('file', file);
-  form.append('upload_preset', CLOUDINARY_PRESET);
-  const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, {
+  
+  const res = await apiFetch('/api/upload/image', {
     method: 'POST',
+    // Let the browser set the correct Content-Type with boundary for FormData
+    headers: {}, 
     body: form,
   });
-  if (!res.ok) throw new Error('Upload ảnh thất bại');
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error((err as any).message || 'Upload ảnh thất bại');
+  }
+  
   const data = await res.json();
-  return data.secure_url as string;
+  return data.url;
 }
 
 export async function addProductImageUrl(productId: string | number, imageUrl: string, isPrimary = false): Promise<string> {
@@ -35,10 +38,13 @@ export const clearToken = () => localStorage.removeItem(isAdminPath() ? 'leon_ad
 
 // ─── Authenticated Fetch ─────────────────────────────────────────────────────
 export async function apiFetch(path: string, options: RequestInit = {}): Promise<Response> {
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json; charset=utf-8',
-    ...((options.headers as Record<string, string>) ?? {}),
-  };
+  const headers: Record<string, string> = { ...((options.headers as Record<string, string>) ?? {}) };
+  
+  // Chỉ tự động thêm Content-Type: json nếu body không phải là FormData
+  if (!(options.body instanceof FormData) && !headers['Content-Type']) {
+    headers['Content-Type'] = 'application/json; charset=utf-8';
+  }
+  
   const token = getToken();
   if (token) headers['Authorization'] = `Bearer ${token}`;
   const url = path.startsWith('http') ? path : `${API_BASE}${path}`;

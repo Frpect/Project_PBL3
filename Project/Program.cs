@@ -83,6 +83,8 @@ builder.Services.AddScoped<IDiscountService, DiscountService>();
 builder.Services.AddScoped<IPaymentService, PaymentService>();
 builder.Services.AddScoped<IShippingService, ShippingService>();
 builder.Services.AddScoped<IJwtService, JwtService>();
+builder.Services.AddHttpClient<IImageService, ImageService>();
+builder.Services.Configure<CloudinarySettings>(builder.Configuration.GetSection("CloudinarySettings"));
 
 // JWT Configuration
 builder.Services.Configure<JwtSettings>(options =>
